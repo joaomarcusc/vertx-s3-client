@@ -8,7 +8,7 @@ A fully functional Vert.x client for S3
 
 ## Dependencies
 
-### Dependency Vert.x 3.x.x
+### Dependency Vert.x 3.3.x
 ### Maven
 ```xml
 <dependency>
@@ -19,7 +19,24 @@ A fully functional Vert.x client for S3
 ```
 
 ## How to use
+```java
+        final S3ClientOptions clientOptions = new S3ClientOptions()
+                .setAwsRegion("eu-central-1")
+                .setAwsServiceName("s3")
+                .setAwsAccessKey("AKIDEXAMPLE")
+                .setAwsSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+                //.setSignPayload(true);
 
+        final S3Client s3Client = new S3Client(
+                vertx,
+                clientOptions);
+
+        s3Client.put("bucket", "key",
+                Buffer.buffer("test"),
+                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                Throwable::printStackTrace);
+
+```
  
 ## License
 Apache License, Version 2.0
