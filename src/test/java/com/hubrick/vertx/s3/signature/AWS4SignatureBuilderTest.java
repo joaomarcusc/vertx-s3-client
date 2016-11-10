@@ -100,9 +100,9 @@ public class AWS4SignatureBuilderTest {
 
         final String requestUri = httpParts.next();
         if (requestUri.contains("?")) {
-            final String canonicalUri = requestUri.substring(0,requestUri.indexOf('?'));
+            final String canonicalUri = requestUri.substring(0, requestUri.indexOf('?'));
             signatureBuilder.canonicalUri(canonicalUri);
-            signatureBuilder.canonicalQueryString(requestUri.substring(canonicalUri.length()+1));
+            signatureBuilder.canonicalQueryString(requestUri.substring(canonicalUri.length() + 1));
         } else {
             signatureBuilder.canonicalUri(requestUri);
         }

@@ -93,6 +93,22 @@ public class AWS4SignatureBuilder {
         return new AWS4SignatureBuilder(date, region, service);
     }
 
+    private static byte[] hmacSha256(final byte[] key, final String value) {
+        try {
+            final String algorithm = "HmacSHA256";
+            final Mac mac = Mac.getInstance(algorithm);
+            mac.init(new SecretKeySpec(key, algorithm));
+            return mac.doFinal(utf8Bytes(value));
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private static byte[] utf8Bytes(final String s) {
+        Preconditions.checkArgument(s != null, "input string must not be null");
+        return s.getBytes(Charsets.UTF_8);
+    }
+
     public AWS4SignatureBuilder httpRequestMethod(final CharSequence httpRequestMethod) {
         Preconditions.checkArgument(StringUtils.isNotBlank(httpRequestMethod), "httpRequestMethod must not be blank");
 
@@ -172,22 +188,6 @@ public class AWS4SignatureBuilder {
         this.signingKey = signing;
 
         return this;
-    }
-
-    private static byte[] hmacSha256(final byte[] key, final String value) {
-        try {
-            final String algorithm = "HmacSHA256";
-            final Mac mac = Mac.getInstance(algorithm);
-            mac.init(new SecretKeySpec(key, algorithm));
-            return mac.doFinal(utf8Bytes(value));
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
-    private static byte[] utf8Bytes(final String s) {
-        Preconditions.checkArgument(s != null, "input string must not be null");
-        return s.getBytes(Charsets.UTF_8);
     }
 
     private String makeCanonicalHeaderString() {

@@ -32,10 +32,9 @@ import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractFunctionalTest {
 
-    protected Vertx vertx;
-
     protected static final int MOCKSERVER_PORT = 8089;
     private static MockServerClient mockServerClient = startClientAndServer(MOCKSERVER_PORT);
+    protected Vertx vertx;
 
     protected static MockServerClient getMockServerClient() {
         return mockServerClient;

@@ -132,14 +132,14 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest setChunked(boolean chunked) {
-        request.setChunked(chunked);
-        return this;
+    public boolean isChunked() {
+        return request.isChunked();
     }
 
     @Override
-    public boolean isChunked() {
-        return request.isChunked();
+    public S3ClientRequest setChunked(boolean chunked) {
+        request.setChunked(chunked);
+        return this;
     }
 
     @Override
@@ -174,14 +174,14 @@ public class S3ClientRequest implements HttpClientRequest {
     }
 
     @Override
-    public S3ClientRequest setHost(String s) {
-        request.setHost(s);
-        return this;
+    public String getHost() {
+        return request.getHost();
     }
 
     @Override
-    public String getHost() {
-        return request.getHost();
+    public S3ClientRequest setHost(String s) {
+        request.setHost(s);
+        return this;
     }
 
     @Override
@@ -261,7 +261,7 @@ public class S3ClientRequest implements HttpClientRequest {
     @Override
     public void end(String chunk, String enc) {
         // Generate authentication header
-        initAuthenticationHeader(Buffer.buffer(chunk,enc));
+        initAuthenticationHeader(Buffer.buffer(chunk, enc));
         request.end(chunk, enc);
     }
 

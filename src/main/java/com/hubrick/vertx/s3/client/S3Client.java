@@ -202,7 +202,7 @@ public class S3Client {
                 clock,
                 signPayload
         ).setTimeout(globalTimeout)
-         .putHeader("Host", hostname);
+                .putHeader("Host", hostname);
 
         return s3ClientRequest.putHeader(S3Headers.COPY_SOURCE_HEADER.getValue(), "/" + sourceBucket + "/" + sourceKey);
     }
