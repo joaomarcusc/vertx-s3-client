@@ -3,7 +3,6 @@ package com.hubrick.vertx.s3.client;
 import com.hubrick.vertx.s3.AbstractFunctionalTest;
 import com.hubrick.vertx.s3.S3TestCredentials;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Before;
@@ -11,6 +10,9 @@ import org.junit.Test;
 import org.mockserver.model.Header;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
 import static com.hubrick.vertx.s3.VertxMatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -21,27 +23,25 @@ import static org.mockserver.model.HttpResponse.response;
  * @author marcus
  * @since 1.0.0
  */
-public class S3ClientTest extends AbstractFunctionalTest {
+public class S3ClientWithoutCredentialsTest extends AbstractFunctionalTest {
 
     public static final String HOSTNAME = "localhost";
     private S3Client s3Client;
 
     @Before
     public void setUp() throws Exception {
-        final HttpClientOptions clientOptions = new HttpClientOptions();
+        final S3ClientOptions clientOptions = new S3ClientOptions();
         clientOptions.setDefaultHost(HOSTNAME);
         clientOptions.setDefaultPort(MOCKSERVER_PORT);
         clientOptions.setMaxPoolSize(10);
+        clientOptions.setAwsRegion(S3TestCredentials.REGION);
+        clientOptions.setAwsServiceName(S3TestCredentials.SERVICE_NAME);
 
         s3Client = new S3Client(
                 vertx,
                 clientOptions,
-                S3TestCredentials.REGION,
-                MOCKSERVER_PORT,
-                S3TestCredentials.SERVICE_NAME,
-                S3TestCredentials.AWS_ACCESS_KEY,
-                S3TestCredentials.AWS_SECRET_KEY,
-                HOSTNAME);
+                HOSTNAME,
+                Clock.fixed(Instant.ofEpochSecond(1478782934), ZoneId.of("UTC")));
 
     }
 
@@ -51,7 +51,6 @@ public class S3ClientTest extends AbstractFunctionalTest {
                 request()
                         .withMethod("GET")
                         .withPath("/bucket/key")
-                        .withHeader("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD")
 
         ).respond(
                 response()
@@ -81,7 +80,6 @@ public class S3ClientTest extends AbstractFunctionalTest {
                 request()
                         .withMethod("PUT")
                         .withPath("/bucket/key")
-                        .withHeader("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD")
                         .withBody("test")
 
         ).respond(
@@ -113,7 +111,6 @@ public class S3ClientTest extends AbstractFunctionalTest {
                 request()
                         .withMethod("DELETE")
                         .withPath("/bucket/key")
-                        .withHeader("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD")
 
         ).respond(
                 response()
@@ -143,7 +140,6 @@ public class S3ClientTest extends AbstractFunctionalTest {
                 request()
                         .withMethod("PUT")
                         .withPath("/destinationBucket/destinationKey")
-                        .withHeader("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD")
                         .withHeader("X-Amz-Copy-Source", "/sourceBucket/sourceKey")
 
         ).respond(

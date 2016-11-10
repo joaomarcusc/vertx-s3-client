@@ -15,6 +15,7 @@ import io.vertx.core.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
@@ -30,8 +31,9 @@ public class S3ClientRequest implements HttpClientRequest {
     private final String serviceName;
     private final String bucket;
     private final String key;
+    private final Clock clock;
 
-    // Used for authentication(which may be optional depending on the bucket)
+    // Used for authentication (which may be optional depending on the bucket)
     private String awsAccessKey;
     private String awsSecretKey;
 
@@ -41,7 +43,7 @@ public class S3ClientRequest implements HttpClientRequest {
                            String bucket,
                            String key,
                            HttpClientRequest request) {
-        this(method, region, serviceName, bucket, key, request, null, null);
+        this(method, region, serviceName, bucket, key, request, null, null, Clock.systemDefaultZone());
     }
 
     public S3ClientRequest(String method,
@@ -51,7 +53,8 @@ public class S3ClientRequest implements HttpClientRequest {
                            String key,
                            HttpClientRequest request,
                            String awsAccessKey,
-                           String awsSecretKey) {
+                           String awsSecretKey,
+                           Clock clock) {
         this.method = method;
         this.region = region;
         this.serviceName = serviceName;
@@ -60,6 +63,7 @@ public class S3ClientRequest implements HttpClientRequest {
         this.request = request;
         this.awsAccessKey = awsAccessKey;
         this.awsSecretKey = awsSecretKey;
+        this.clock = clock;
     }
 
     @Override
@@ -312,7 +316,7 @@ public class S3ClientRequest implements HttpClientRequest {
             final String canonicalizedResource = "/" + bucket + "/" + key;
 
             final AWS4SignatureBuilder signatureBuilder = AWS4SignatureBuilder
-                    .builder(ZonedDateTime.now(), region, serviceName)
+                    .builder(ZonedDateTime.now(clock), region, serviceName)
                     .httpRequestMethod(method)
                     .canonicalUri(canonicalizedResource)
                     .awsSecretKey(awsSecretKey);

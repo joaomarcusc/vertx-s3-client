@@ -6,14 +6,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 
 import java.text.MessageFormat;
+import java.time.Clock;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class S3Client {
 
@@ -21,81 +22,65 @@ public class S3Client {
     public static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
     private static final String ENDPOINT_PATTERN = "s3-{0}.amazonaws.com";
 
-    private final String awsAccessKey;
-    private final String awsSecretKey;
-    private final String region;
-    private final Integer port;
-    private final String serviceName;
+    private final Long globalTimeout;
+    private final String awsRegion;
+
     private final String hostname;
 
-    private Long globalTimeout = 10000L;
-
+    private final Clock clock;
     private final HttpClient client;
+    private final String awsAccessKey;
+    private final String awsSecretKey;
+    private final String awsServiceName;
 
     public S3Client(Vertx vertx,
-                    HttpClientOptions httpClientOptions,
-                    String region,
-                    Integer port,
-                    String serviceName,
-                    String accessKey,
-                    String secretKey) {
-        this(vertx, httpClientOptions, region, port, serviceName, accessKey, secretKey, null);
+                    S3ClientOptions s3ClientOptions) {
+        this(vertx, s3ClientOptions, null, Clock.systemDefaultZone());
     }
 
     public S3Client(Vertx vertx,
-                    HttpClientOptions httpClientOptions,
-                    String region,
-                    Integer port,
-                    String serviceName,
-                    String accessKey,
-                    String secretKey,
-                    String hostnameOverride) {
+                    S3ClientOptions s3ClientOptions,
+                    String hostnameOverride,
+                    Clock clock) {
         checkNotNull(vertx, "vertx must not be null");
-        checkNotNull(region, "region must not be null");
-        checkArgument(!region.isEmpty(), "region must not be empty");
-        checkNotNull(port, "port must not be null");
-        checkNotNull(serviceName, "serviceName must not be null");
-        checkArgument(!serviceName.isEmpty(), "serviceName must not be empty");
-        checkNotNull(accessKey, "accessKey must not be null");
-        checkArgument(!accessKey.isEmpty(), "accessKey must not be empty");
-        checkNotNull(secretKey, "secretKey must not be null");
-        checkArgument(!secretKey.isEmpty(), "secretKey must not be empty");
+        checkNotNull(isNotBlank(s3ClientOptions.getAwsRegion()), "AWS region must be set");
+        checkNotNull(isNotBlank(s3ClientOptions.getAwsServiceName()), "AWS service name must be set");
+        checkNotNull(clock, "Clock must not be null");
+        checkNotNull(s3ClientOptions.getGlobalTimeoutMs(), "global timeout must be null");
+        checkArgument(s3ClientOptions.getGlobalTimeoutMs() > 0, "global timeout must be more than zero ms");
 
-        this.region = region;
-        this.port = port;
-        this.serviceName = serviceName;
-        this.awsAccessKey = accessKey;
-        this.awsSecretKey = secretKey;
+
+        this.clock = clock;
+        this.awsServiceName = s3ClientOptions.getAwsServiceName();
+        this.awsRegion = s3ClientOptions.getAwsRegion();
+        this.awsAccessKey = s3ClientOptions.getAwsAccessKey();
+        this.awsSecretKey = s3ClientOptions.getAwsSecretKey();
+        this.globalTimeout = s3ClientOptions.getGlobalTimeoutMs();
+
 
         if (!Strings.isNullOrEmpty(hostnameOverride)) {
             hostname = hostnameOverride;
         } else {
-            if (DEFAULT_REGION.equals(region.toLowerCase())) {
+            if (DEFAULT_REGION.equals(s3ClientOptions.getAwsRegion())) {
                 hostname = DEFAULT_ENDPOINT;
             } else {
-                hostname = MessageFormat.format(ENDPOINT_PATTERN, region);
+                hostname = MessageFormat.format(ENDPOINT_PATTERN, awsRegion);
             }
         }
 
-        httpClientOptions.setDefaultHost(hostname);
-        httpClientOptions.setDefaultPort(port);
-        this.client = vertx.createHttpClient(httpClientOptions);
+        this.client = vertx.createHttpClient(s3ClientOptions);
     }
 
-    public String getRegion() {
-        return region;
+    public String getAwsRegion() {
+        return awsRegion;
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public String getAwsServiceName() {
+        return awsServiceName;
     }
 
     public String getHostname() {
         return hostname;
-    }
-
-    public Integer getPort() {
-        return port;
     }
 
     public void close() {
@@ -104,10 +89,6 @@ public class S3Client {
 
     public Long getGlobalTimeout() {
         return globalTimeout;
-    }
-
-    public void setGlobalTimeout(Long globalTimeout) {
-        this.globalTimeout = globalTimeout;
     }
 
     // Direct call (async)
@@ -166,13 +147,14 @@ public class S3Client {
         HttpClientRequest httpRequest = client.put("/" + bucket + "/" + key,
                 handler);
         return new S3ClientRequest("PUT",
-                region,
-                serviceName,
+                awsRegion,
+                awsServiceName,
                 bucket,
                 key,
                 httpRequest,
                 awsAccessKey,
-                awsSecretKey)
+                awsSecretKey,
+                clock)
                 .setTimeout(globalTimeout)
                 .putHeader("Host", hostname);
 
@@ -190,13 +172,14 @@ public class S3Client {
         );
 
         final S3ClientRequest s3ClientRequest = new S3ClientRequest("PUT",
-                region,
-                serviceName,
+                awsRegion,
+                awsServiceName,
                 destinationBucket,
                 destinationKey,
                 httpRequest,
                 awsAccessKey,
-                awsSecretKey
+                awsSecretKey,
+                clock
         ).setTimeout(globalTimeout)
          .putHeader("Host", hostname);
 
@@ -210,13 +193,14 @@ public class S3Client {
         HttpClientRequest httpRequest = client.get("/" + bucket + "/" + key,
                 handler);
         return new S3ClientRequest("GET",
-                region,
-                serviceName,
+                awsRegion,
+                awsServiceName,
                 bucket,
                 key,
                 httpRequest,
                 awsAccessKey,
-                awsSecretKey)
+                awsSecretKey,
+                clock)
                 .setTimeout(globalTimeout)
                 .putHeader("Host", hostname);
     }
@@ -228,13 +212,14 @@ public class S3Client {
         HttpClientRequest httpRequest = client.delete("/" + bucket + "/" + key,
                 handler);
         return new S3ClientRequest("DELETE",
-                region,
-                serviceName,
+                awsRegion,
+                awsServiceName,
                 bucket,
                 key,
                 httpRequest,
                 awsAccessKey,
-                awsSecretKey)
+                awsSecretKey,
+                clock)
                 .setTimeout(globalTimeout)
                 .putHeader("Host", hostname);
 
