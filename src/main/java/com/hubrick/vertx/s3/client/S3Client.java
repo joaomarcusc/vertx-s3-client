@@ -32,6 +32,7 @@ public class S3Client {
     private final String awsAccessKey;
     private final String awsSecretKey;
     private final String awsServiceName;
+    private final boolean signPayload;
 
     public S3Client(Vertx vertx,
                     S3ClientOptions s3ClientOptions) {
@@ -56,7 +57,7 @@ public class S3Client {
         this.awsAccessKey = s3ClientOptions.getAwsAccessKey();
         this.awsSecretKey = s3ClientOptions.getAwsSecretKey();
         this.globalTimeout = s3ClientOptions.getGlobalTimeoutMs();
-
+        this.signPayload = s3ClientOptions.isSignPayload();
 
         if (!Strings.isNullOrEmpty(hostnameOverride)) {
             hostname = hostnameOverride;
@@ -154,7 +155,8 @@ public class S3Client {
                 httpRequest,
                 awsAccessKey,
                 awsSecretKey,
-                clock)
+                clock,
+                signPayload)
                 .setTimeout(globalTimeout)
                 .putHeader("Host", hostname);
 
@@ -179,7 +181,8 @@ public class S3Client {
                 httpRequest,
                 awsAccessKey,
                 awsSecretKey,
-                clock
+                clock,
+                signPayload
         ).setTimeout(globalTimeout)
          .putHeader("Host", hostname);
 
@@ -200,7 +203,8 @@ public class S3Client {
                 httpRequest,
                 awsAccessKey,
                 awsSecretKey,
-                clock)
+                clock,
+                signPayload)
                 .setTimeout(globalTimeout)
                 .putHeader("Host", hostname);
     }
@@ -219,7 +223,8 @@ public class S3Client {
                 httpRequest,
                 awsAccessKey,
                 awsSecretKey,
-                clock)
+                clock,
+                signPayload)
                 .setTimeout(globalTimeout)
                 .putHeader("Host", hostname);
 

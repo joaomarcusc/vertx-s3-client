@@ -24,6 +24,7 @@ import java.util.List;
  */
 public class S3ClientOptions extends HttpClientOptions {
 
+    private boolean signPayload;
     private String awsAccessKey;
     private String awsSecretKey;
     private String awsRegion;
@@ -38,6 +39,7 @@ public class S3ClientOptions extends HttpClientOptions {
     public S3ClientOptions(final S3ClientOptions other) {
         super(other);
 
+        setSignPayload(other.isSignPayload());
         setAwsAccessKey(other.getAwsAccessKey());
         setAwsSecretKey(other.getAwsSecretKey());
         setAwsRegion(other.getAwsRegion());
@@ -52,11 +54,21 @@ public class S3ClientOptions extends HttpClientOptions {
     public S3ClientOptions(final JsonObject json) {
         super(json);
 
+        setSignPayload(json.getBoolean("signPayload"));
         setAwsAccessKey(json.getString("awsAccessKey"));
         setAwsSecretKey(json.getString("awsSecretKey"));
         setAwsRegion(json.getString("awsRegion"));
         setAwsServiceName(json.getString("awsServiceName"));
         setGlobalTimeoutMs(json.getLong("globalTimeoutMs"));
+    }
+
+    public boolean isSignPayload() {
+        return signPayload;
+    }
+
+    public S3ClientOptions setSignPayload(final boolean signPayload) {
+        this.signPayload = signPayload;
+        return this;
     }
 
     public String getAwsAccessKey() {

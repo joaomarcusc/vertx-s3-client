@@ -32,6 +32,7 @@ public class S3ClientRequest implements HttpClientRequest {
     private final String bucket;
     private final String key;
     private final Clock clock;
+    private final boolean signPayload;
 
     // Used for authentication (which may be optional depending on the bucket)
     private String awsAccessKey;
@@ -43,7 +44,7 @@ public class S3ClientRequest implements HttpClientRequest {
                            String bucket,
                            String key,
                            HttpClientRequest request) {
-        this(method, region, serviceName, bucket, key, request, null, null, Clock.systemDefaultZone());
+        this(method, region, serviceName, bucket, key, request, null, null, Clock.systemDefaultZone(), false);
     }
 
     public S3ClientRequest(String method,
@@ -54,7 +55,8 @@ public class S3ClientRequest implements HttpClientRequest {
                            HttpClientRequest request,
                            String awsAccessKey,
                            String awsSecretKey,
-                           Clock clock) {
+                           Clock clock,
+                           boolean signPayload) {
         this.method = method;
         this.region = region;
         this.serviceName = serviceName;
@@ -64,6 +66,7 @@ public class S3ClientRequest implements HttpClientRequest {
         this.awsAccessKey = awsAccessKey;
         this.awsSecretKey = awsSecretKey;
         this.clock = clock;
+        this.signPayload = signPayload;
     }
 
     @Override
@@ -222,7 +225,7 @@ public class S3ClientRequest implements HttpClientRequest {
     @Override
     public S3ClientRequest sendHead() {
         // Generate authentication header
-        initAuthenticationHeader();
+        initAuthenticationHeader(Buffer.buffer());
         // Send the header
         request.sendHead();
         return this;
@@ -236,28 +239,28 @@ public class S3ClientRequest implements HttpClientRequest {
     @Override
     public void end(String chunk) {
         // Generate authentication header
-        initAuthenticationHeader();
+        initAuthenticationHeader(Buffer.buffer(chunk));
         request.end(chunk);
     }
 
     @Override
     public void end(String chunk, String enc) {
         // Generate authentication header
-        initAuthenticationHeader();
+        initAuthenticationHeader(Buffer.buffer(chunk,enc));
         request.end(chunk, enc);
     }
 
     @Override
     public void end(Buffer chunk) {
         // Generate authentication header
-        initAuthenticationHeader();
+        initAuthenticationHeader(chunk);
         request.end(chunk);
     }
 
     @Override
     public void end() {
         // Generate authentication header
-        initAuthenticationHeader();
+        initAuthenticationHeader(Buffer.buffer());
         request.end();
     }
 
@@ -311,7 +314,7 @@ public class S3ClientRequest implements HttpClientRequest {
         return this;
     }
 
-    protected void initAuthenticationHeader() {
+    protected void initAuthenticationHeader(Buffer payload) {
         if (isAuthenticated()) {
             final String canonicalizedResource = "/" + bucket + "/" + key;
 
@@ -327,7 +330,12 @@ public class S3ClientRequest implements HttpClientRequest {
                 signatureBuilder.header(entry.getKey(), entry.getValue());
             }
 
-            headers().set(S3Headers.CONTENT_SHA.getValue(), AWS4SignatureBuilder.UNSIGNED_PAYLOAD);
+            if (signPayload) {
+                signatureBuilder.payload(payload.getBytes());
+                headers().set(S3Headers.CONTENT_SHA.getValue(), signatureBuilder.getPayloadHash());
+            } else {
+                headers().set(S3Headers.CONTENT_SHA.getValue(), AWS4SignatureBuilder.UNSIGNED_PAYLOAD);
+            }
 
             log.info("S3 toSign:\n{}", signatureBuilder.makeCanonicalRequest());
 
