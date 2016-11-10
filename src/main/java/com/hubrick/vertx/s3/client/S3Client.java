@@ -84,7 +84,10 @@ public class S3Client {
             }
         }
 
-        this.client = vertx.createHttpClient(s3ClientOptions);
+        final S3ClientOptions options = new S3ClientOptions(s3ClientOptions);
+        options.setDefaultHost(hostname);
+
+        this.client = vertx.createHttpClient(options);
     }
 
     public String getAwsRegion() {
