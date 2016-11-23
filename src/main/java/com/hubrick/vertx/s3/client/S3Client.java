@@ -51,12 +51,11 @@ public class S3Client {
 
     public S3Client(Vertx vertx,
                     S3ClientOptions s3ClientOptions) {
-        this(vertx, s3ClientOptions, null, Clock.systemDefaultZone());
+        this(vertx, s3ClientOptions, Clock.systemDefaultZone());
     }
 
     public S3Client(Vertx vertx,
                     S3ClientOptions s3ClientOptions,
-                    String hostnameOverride,
                     Clock clock) {
         checkNotNull(vertx, "vertx must not be null");
         checkNotNull(isNotBlank(s3ClientOptions.getAwsRegion()), "AWS region must be set");
@@ -74,6 +73,7 @@ public class S3Client {
         this.globalTimeout = s3ClientOptions.getGlobalTimeoutMs();
         this.signPayload = s3ClientOptions.isSignPayload();
 
+        final String hostnameOverride = s3ClientOptions.getHostnameOverride();
         if (!Strings.isNullOrEmpty(hostnameOverride)) {
             hostname = hostnameOverride;
         } else {

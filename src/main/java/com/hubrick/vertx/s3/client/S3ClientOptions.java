@@ -45,7 +45,7 @@ public class S3ClientOptions extends HttpClientOptions {
     private String awsRegion;
     private String awsServiceName;
     private Long globalTimeoutMs = 10000L;
-
+    private String hostnameOverride;
 
     public S3ClientOptions() {
         super();
@@ -60,6 +60,7 @@ public class S3ClientOptions extends HttpClientOptions {
         setAwsRegion(other.getAwsRegion());
         setAwsServiceName(other.getAwsServiceName());
         setGlobalTimeoutMs(other.getGlobalTimeoutMs());
+        setHostnameOverride(other.getHostnameOverride());
     }
 
     public S3ClientOptions(final HttpClientOptions other) {
@@ -75,6 +76,7 @@ public class S3ClientOptions extends HttpClientOptions {
         setAwsRegion(json.getString("awsRegion"));
         setAwsServiceName(json.getString("awsServiceName"));
         setGlobalTimeoutMs(json.getLong("globalTimeoutMs"));
+        setHostnameOverride(json.getString("hostnameOverride"));
     }
 
     public boolean isSignPayload() {
@@ -128,6 +130,15 @@ public class S3ClientOptions extends HttpClientOptions {
 
     public S3ClientOptions setGlobalTimeoutMs(final Long globalTimeoutMs) {
         this.globalTimeoutMs = globalTimeoutMs;
+        return this;
+    }
+
+    public String getHostnameOverride() {
+        return hostnameOverride;
+    }
+
+    public S3ClientOptions setHostnameOverride(final String hostnameOverride) {
+        this.hostnameOverride = hostnameOverride;
         return this;
     }
 

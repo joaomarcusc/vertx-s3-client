@@ -51,13 +51,13 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
         clientOptions.setMaxPoolSize(10);
         clientOptions.setAwsRegion(S3TestCredentials.REGION);
         clientOptions.setAwsServiceName(S3TestCredentials.SERVICE_NAME);
+        clientOptions.setHostnameOverride(HOSTNAME);
 
         augmentClientOptions(clientOptions);
 
         s3Client = new S3Client(
                 vertx,
                 clientOptions,
-                HOSTNAME,
                 Clock.fixed(Instant.ofEpochSecond(1478782934), ZoneId.of("UTC")));
 
     }
