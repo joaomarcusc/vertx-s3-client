@@ -52,6 +52,7 @@ public class S3ClientRequest implements HttpClientRequest {
     // Used for authentication (which may be optional depending on the bucket)
     private String awsAccessKey;
     private String awsSecretKey;
+    private boolean authenticationHeaderSet;
 
     public S3ClientRequest(String method,
                            String region,
@@ -215,18 +216,24 @@ public class S3ClientRequest implements HttpClientRequest {
 
     @Override
     public S3ClientRequest write(Buffer chunk) {
+        initAuthenticationHeaderBeforePayload();
+
         request.write(chunk);
         return this;
     }
 
     @Override
     public S3ClientRequest write(String chunk) {
+        initAuthenticationHeaderBeforePayload();
+
         request.write(chunk);
         return this;
     }
 
     @Override
     public S3ClientRequest write(String chunk, String enc) {
+        initAuthenticationHeaderBeforePayload();
+
         request.write(chunk, enc);
         return this;
     }
@@ -239,43 +246,45 @@ public class S3ClientRequest implements HttpClientRequest {
 
     @Override
     public S3ClientRequest sendHead() {
-        // Generate authentication header
-        initAuthenticationHeader(Buffer.buffer());
-        // Send the header
+        initAuthenticationHeaderBeforePayload();
+
         request.sendHead();
         return this;
     }
 
     @Override
-    public HttpClientRequest sendHead(Handler<HttpVersion> handler) {
-        return request.sendHead(handler);
+    public S3ClientRequest sendHead(Handler<HttpVersion> handler) {
+        initAuthenticationHeaderBeforePayload();
+
+        request.sendHead(handler);
+        return this;
     }
 
     @Override
     public void end(String chunk) {
-        // Generate authentication header
         initAuthenticationHeader(Buffer.buffer(chunk));
+
         request.end(chunk);
     }
 
     @Override
     public void end(String chunk, String enc) {
-        // Generate authentication header
         initAuthenticationHeader(Buffer.buffer(chunk, enc));
+
         request.end(chunk, enc);
     }
 
     @Override
     public void end(Buffer chunk) {
-        // Generate authentication header
         initAuthenticationHeader(chunk);
+
         request.end(chunk);
     }
 
     @Override
     public void end() {
-        // Generate authentication header
         initAuthenticationHeader(Buffer.buffer());
+
         request.end();
     }
 
@@ -329,43 +338,57 @@ public class S3ClientRequest implements HttpClientRequest {
         return this;
     }
 
-    protected void initAuthenticationHeader(Buffer payload) {
-        if (isAuthenticated()) {
-            final String canonicalizedResource = "/" + bucket + "/" + key;
-
-            final AWS4SignatureBuilder signatureBuilder = AWS4SignatureBuilder
-                    .builder(ZonedDateTime.now(clock), region, serviceName)
-                    .httpRequestMethod(method)
-                    .canonicalUri(canonicalizedResource)
-                    .awsSecretKey(awsSecretKey);
-
-            headers().set(S3Headers.DATE.getValue(), signatureBuilder.makeSignatureFormattedDate());
-
-            for (Map.Entry<String, String> entry : headers()) {
-                signatureBuilder.header(entry.getKey(), entry.getValue());
-            }
-
-            if (signPayload) {
-                signatureBuilder.payload(payload.getBytes());
-                headers().set(S3Headers.CONTENT_SHA.getValue(), signatureBuilder.getPayloadHash());
-            } else {
-                headers().set(S3Headers.CONTENT_SHA.getValue(), AWS4SignatureBuilder.UNSIGNED_PAYLOAD);
-            }
-
-            log.info("S3 toSign:\n{}", signatureBuilder.makeCanonicalRequest());
-
-            try {
-
-                headers().set("Authorization", signatureBuilder.buildAuthorizationHeaderValue(awsAccessKey));
-
-            } catch (Exception e) {
-                // This will totally fail,
-                // but downstream users can handle it
-                log.error("Failed to sign S3 request due to " + e.getMessage(), e);
-            }
-
+    protected void initAuthenticationHeaderBeforePayload() {
+        if (signPayload) {
+            throw new RuntimeException("Can not stream to request with signed payload");
         }
-        // Otherwise not needed
+        initAuthenticationHeader(Buffer.buffer());
+    }
+
+
+    protected void initAuthenticationHeader(Buffer payload) {
+        if (!isAuthenticated()) {
+            return;
+        }
+        if (authenticationHeaderSet) {
+            return;
+        }
+
+        authenticationHeaderSet = true;
+
+
+        final String canonicalizedResource = "/" + bucket + "/" + key;
+
+        final AWS4SignatureBuilder signatureBuilder = AWS4SignatureBuilder
+                .builder(ZonedDateTime.now(clock), region, serviceName)
+                .httpRequestMethod(method)
+                .canonicalUri(canonicalizedResource)
+                .awsSecretKey(awsSecretKey);
+
+        headers().set(S3Headers.DATE.getValue(), signatureBuilder.makeSignatureFormattedDate());
+
+        for (Map.Entry<String, String> entry : headers()) {
+            signatureBuilder.header(entry.getKey(), entry.getValue());
+        }
+
+        if (signPayload) {
+            signatureBuilder.payload(payload.getBytes());
+            headers().set(S3Headers.CONTENT_SHA.getValue(), signatureBuilder.getPayloadHash());
+        } else {
+            headers().set(S3Headers.CONTENT_SHA.getValue(), AWS4SignatureBuilder.UNSIGNED_PAYLOAD);
+        }
+
+        log.info("S3 toSign:\n{}", signatureBuilder.makeCanonicalRequest());
+
+        try {
+
+            headers().set("Authorization", signatureBuilder.buildAuthorizationHeaderValue(awsAccessKey));
+
+        } catch (Exception e) {
+            // This will totally fail,
+            // but downstream users can handle it
+            log.error("Failed to sign S3 request due to " + e.getMessage(), e);
+        }
     }
 
     public boolean isAuthenticated() {
