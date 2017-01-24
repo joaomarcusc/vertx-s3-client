@@ -27,7 +27,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.PercentEscaper;
-import com.google.common.net.UrlEscapers;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.lang3.StringUtils;
@@ -60,6 +59,9 @@ public class AWS4SignatureBuilder {
     private final static DateTimeFormatter CREDENTIAL_SCOPE_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
     private final static String CREDENTIAL_SCOPE_TERMINATION_STRING = "aws4_request";
     private final static String ESCAPE_SAFE_CHARACTERS = "-_.*~";
+
+    private final static PercentEscaper QUERY_PARAMETER_ESCAPER = new PercentEscaper(ESCAPE_SAFE_CHARACTERS, true);
+    private final static PercentEscaper PATH_PARTS_ESCAPER = new PercentEscaper(ESCAPE_SAFE_CHARACTERS + "/", true);
 
     private final ZonedDateTime date;
     private final String region;
@@ -119,7 +121,7 @@ public class AWS4SignatureBuilder {
     public AWS4SignatureBuilder canonicalUri(final CharSequence canonicalUri) {
         Preconditions.checkArgument(StringUtils.isNotBlank(canonicalUri), "canonicalUri must not be blank");
 
-        this.canonicalUri = UrlEscapers.urlFragmentEscaper().escape(canonicalUri.toString());
+        this.canonicalUri = PATH_PARTS_ESCAPER.escape(canonicalUri.toString());
         return this;
     }
 
@@ -139,14 +141,14 @@ public class AWS4SignatureBuilder {
 
         this.canonicalQueryString = parameters.stream()
                 .sorted((kv1, kv2) -> kv1.getKey().compareTo(kv2.getKey()))
-                .map(kv -> urlEncode(kv.getKey()) + "=" + urlEncode(kv.getValue()))
+                .map(kv -> queryParameterEscape(kv.getKey()) + "=" + queryParameterEscape(kv.getValue()))
                 .collect(Collectors.joining("&"));
 
         return this;
     }
 
-    private String urlEncode(final String s) {
-        return new PercentEscaper(ESCAPE_SAFE_CHARACTERS, true).escape(s);
+    private String queryParameterEscape(final String s) {
+        return QUERY_PARAMETER_ESCAPER.escape(s);
     }
 
     public AWS4SignatureBuilder header(final String headerName, final String headerValue) {
