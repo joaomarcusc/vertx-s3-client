@@ -14,7 +14,7 @@ A fully functional Vert.x client for S3
 <dependency>
     <groupId>com.hubrick.vertx</groupId>
     <artifactId>vertx-s3-client</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -27,15 +27,50 @@ A fully functional Vert.x client for S3
                 .setAwsSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
                 //.setSignPayload(true);
 
-        final S3Client s3Client = new S3Client(
-                vertx,
-                clientOptions);
+        final S3Client s3Client = new S3Client(vertx, clientOptions);
 
-        s3Client.put("bucket", "key",
+        s3Client.getObject(
+                "bucket", 
+                "key",
+                new GetObjectRequest().withResponseContentType("application/json"),
+                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                Throwable::printStackTrace
+        );
+
+        s3Client.putObject(
+                "bucket", 
+                "key",
+                new PutObjectRequest().withContentType("application/json"),
                 Buffer.buffer("test"),
                 response -> System.out.println("Response from AWS: " + response.statusMessage()),
-                Throwable::printStackTrace);
-
+                Throwable::printStackTrace
+        );
+        
+        s3Client.deleteObject(
+                "bucket", 
+                "key",
+                new DeleteObjectRequest(),
+                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                Throwable::printStackTrace
+        );
+        
+        s3Client.copyObject(
+                "sourceBucket", 
+                "sourceKey",
+                "destinationBucket", 
+                "destinationKey",
+                new CopyObjectRequest(),
+                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                Throwable::printStackTrace
+        );
+        
+        // List bucket v2
+        s3Client.getBucket(
+                "bucket",
+                new GetBucketRequest().withPrefix("prefix"),
+                getBucketRespone -> System.out.println("Response from AWS: " + getBucketRespone.getName()),
+                Throwable::printStackTrace
+        );
 ```
  
 ## License
