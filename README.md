@@ -72,6 +72,9 @@ A fully functional Vert.x client for S3
                 Throwable::printStackTrace
         );
 ```
+
+## Error handling
+In case some error happens on S3 side a HttpErrorException is thrown which contains the unmarshalled ErrorResponse object from S3. 
  
 ## License
 Apache License, Version 2.0
