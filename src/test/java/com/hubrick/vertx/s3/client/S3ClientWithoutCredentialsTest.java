@@ -37,6 +37,14 @@ public class S3ClientWithoutCredentialsTest extends AbstractS3ClientTest {
         verifyGetObject(testContext);
     }
 
+
+    @Test
+    public void testHeadObject(TestContext testContext) throws IOException {
+        mockHeadObject();
+
+        verifyHeadObject(testContext);
+    }
+
     @Test
     public void testPutObject(TestContext testContext) throws IOException {
         mockPutObject();
