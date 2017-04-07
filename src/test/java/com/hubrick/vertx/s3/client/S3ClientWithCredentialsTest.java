@@ -41,7 +41,17 @@ public class S3ClientWithCredentialsTest extends AbstractS3ClientTest {
         );
 
         verifyGetObject(testContext);
+    }
 
+    @Test
+    public void testHeadObject(TestContext testContext) throws IOException {
+        mockHeadObject(
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-date, Signature=b77c3b79a471ca7a096af18fa56affe4a45589a6d732770b3a30f54aa6e1399d")
+        );
+
+        verifyHeadObject(testContext);
     }
 
     @Test

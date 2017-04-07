@@ -27,6 +27,7 @@ import com.hubrick.vertx.s3.model.ErrorResponse;
 import com.hubrick.vertx.s3.model.GetBucketRequest;
 import com.hubrick.vertx.s3.model.GetBucketRespone;
 import com.hubrick.vertx.s3.model.GetObjectRequest;
+import com.hubrick.vertx.s3.model.HeadObjectRequest;
 import com.hubrick.vertx.s3.model.Owner;
 import com.hubrick.vertx.s3.model.PutObjectRequest;
 import com.hubrick.vertx.s3.model.filter.NamespaceFilter;
@@ -154,6 +155,22 @@ public class S3Client {
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
 
         final S3ClientRequest request = createGetRequest(bucket, key, getObjectRequest, new StreamResponseHandler("getObject", jaxbUnmarshaller, handler, exceptionHandler));
+        request.exceptionHandler(exceptionHandler);
+        request.end();
+    }
+
+    public void headObject(String bucket,
+                           String key,
+                           HeadObjectRequest headObjectRequest,
+                           Handler<MultiMap> handler,
+                           Handler<Throwable> exceptionHandler) {
+        checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(headObjectRequest, "headObjectRequest must not be null");
+        checkNotNull(handler, "handler must not be null");
+        checkNotNull(exceptionHandler, "exceptionHandler must not be null");
+
+        final S3ClientRequest request = createHeadRequest(bucket, key, headObjectRequest, new HeadersResponseHandler("headObject", jaxbUnmarshaller, handler, exceptionHandler));
         request.exceptionHandler(exceptionHandler);
         request.end();
     }
@@ -433,6 +450,51 @@ public class S3Client {
         return headers;
     }
 
+    private S3ClientRequest createHeadRequest(String bucket,
+                                              String key,
+                                              HeadObjectRequest headObjectRequest,
+                                              Handler<HttpClientResponse> handler) {
+        final HttpClientRequest httpRequest = client.head("/" + bucket + "/" + key, handler);
+        final S3ClientRequest s3ClientRequest = new S3ClientRequest(
+                "HEAD",
+                awsRegion,
+                awsServiceName,
+                httpRequest,
+                awsAccessKey,
+                awsSecretKey,
+                clock,
+                signPayload
+        )
+                .setTimeout(globalTimeout)
+                .putHeader("Host", hostname);
+
+        s3ClientRequest.headers().addAll(populateHeadObjectHeaders(headObjectRequest));
+        return s3ClientRequest;
+    }
+
+    private MultiMap populateHeadObjectHeaders(HeadObjectRequest headObjectRequest) {
+        final MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+
+        if (StringUtils.trimToNull(headObjectRequest.getRange()) != null) {
+            headers.add("Range", StringUtils.trim(headObjectRequest.getRange()));
+        }
+        if (StringUtils.trimToNull(headObjectRequest.getIfModifiedSince()) != null) {
+            headers.add("If-Modified-Since", StringUtils.trim(headObjectRequest.getIfModifiedSince()));
+        }
+        if (StringUtils.trimToNull(headObjectRequest.getIfUnmodifiedSince()) != null) {
+            headers.add("If-Unmodified-Since", StringUtils.trim(headObjectRequest.getIfUnmodifiedSince()));
+        }
+        if (StringUtils.trimToNull(headObjectRequest.getIfMatch()) != null) {
+            headers.add("If-Match", StringUtils.trim(headObjectRequest.getIfMatch()));
+        }
+        if (StringUtils.trimToNull(headObjectRequest.getIfNoneMatch()) != null) {
+            headers.add("If-None-Match", StringUtils.trim(headObjectRequest.getIfNoneMatch()));
+        }
+
+        return headers;
+    }
+
+
     private S3ClientRequest createGetBucketRequest(String bucket,
                                                    GetBucketRequest getBucketRequest,
                                                    Handler<HttpClientResponse> handler) {
@@ -645,6 +707,52 @@ public class S3Client {
                             log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
                         }
                         successHandler.handle((T) jaxbUnmarshaller.unmarshal(convertToSaxSource(buffer.getBytes())));
+                    }
+                } catch (Exception e) {
+                    exceptionHandler.handle(e);
+                }
+            });
+        }
+    }
+
+    private class HeadersResponseHandler implements Handler<HttpClientResponse> {
+
+        private final String action;
+        private final Unmarshaller jaxbUnmarshaller;
+        private final Handler<MultiMap> successHandler;
+        private final Handler<Throwable> exceptionHandler;
+
+        private HeadersResponseHandler(String action, Unmarshaller jaxbUnmarshaller, Handler<MultiMap> successHandler, Handler<Throwable> exceptionHandler) {
+            this.action = action;
+            this.jaxbUnmarshaller = jaxbUnmarshaller;
+            this.successHandler = successHandler;
+            this.exceptionHandler = exceptionHandler;
+        }
+
+        @Override
+        public void handle(HttpClientResponse event) {
+            event.bodyHandler(buffer -> {
+                try {
+                    if (event.statusCode() / 100 != 2) {
+                        log.warn("Error occurred. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
+                        if (log.isDebugEnabled()) {
+                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+                        }
+
+                        exceptionHandler.handle(
+                                new HttpErrorException(
+                                        event.statusCode(),
+                                        event.statusMessage(),
+                                        (ErrorResponse) jaxbUnmarshaller.unmarshal(convertToSaxSource(buffer.getBytes())),
+                                        "Error occurred on '" + action + "'"
+                                )
+                        );
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
+                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+                        }
+                        successHandler.handle(event.headers());
                     }
                 } catch (Exception e) {
                     exceptionHandler.handle(e);

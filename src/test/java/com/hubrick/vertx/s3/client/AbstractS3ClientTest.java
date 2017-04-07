@@ -23,6 +23,7 @@ import com.hubrick.vertx.s3.model.CopyObjectRequest;
 import com.hubrick.vertx.s3.model.DeleteObjectRequest;
 import com.hubrick.vertx.s3.model.GetBucketRequest;
 import com.hubrick.vertx.s3.model.GetObjectRequest;
+import com.hubrick.vertx.s3.model.HeadObjectRequest;
 import com.hubrick.vertx.s3.model.PutObjectRequest;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.Async;
@@ -96,6 +97,16 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
         );
     }
 
+    void mockHeadObject(Header... expectedHeaders) throws IOException {
+        mock(
+                Collections.emptyMap(),
+                "HEAD",
+                "/bucket/key",
+                200,
+                "0".getBytes(),
+                expectedHeaders
+        );
+    }
 
     void mockGetObjectErrorResponse(Header... expectedHeaders) throws IOException {
         mock(
@@ -121,6 +132,17 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                     });
                 },
                 testContext::fail);
+    }
+
+    void verifyHeadObject(TestContext testContext) {
+        final Async async = testContext.async();
+        s3Client.headObject("bucket", "key", new HeadObjectRequest(),
+                (response) -> {
+                    assertThat(testContext, response, notNullValue());
+                    async.complete();
+                },
+                testContext::fail
+        );
     }
 
     void verifyGetObjectErrorResponse(final TestContext testContext) {
