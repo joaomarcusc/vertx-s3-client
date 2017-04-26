@@ -14,7 +14,7 @@ A fully functional Vert.x client for S3
 <dependency>
     <groupId>com.hubrick.vertx</groupId>
     <artifactId>vertx-s3-client</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -61,6 +61,14 @@ A fully functional Vert.x client for S3
                 "destinationKey",
                 new CopyObjectRequest(),
                 response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                Throwable::printStackTrace
+        );
+        
+        s3Client.headObject(
+                "bucket", 
+                "key",
+                new HeadObjectRequest(),
+                headers -> System.out.println("Response from AWS: " + headers.get("Content-Type")),
                 Throwable::printStackTrace
         );
         
