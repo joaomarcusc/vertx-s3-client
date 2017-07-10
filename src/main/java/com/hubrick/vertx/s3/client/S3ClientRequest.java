@@ -15,7 +15,7 @@
  */
 package com.hubrick.vertx.s3.client;
 
-import com.hubrick.vertx.s3.S3Headers;
+import com.google.common.base.Charsets;
 import com.hubrick.vertx.s3.signature.AWS4SignatureBuilder;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -37,7 +37,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class S3ClientRequest implements HttpClientRequest {
+class S3ClientRequest implements HttpClientRequest {
 
     private static final Logger log = LoggerFactory.getLogger(S3ClientRequest.class);
 
@@ -230,6 +230,8 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeaderBeforePayload();
 
         request.write(chunk);
+        logBody(chunk);
+
         return this;
     }
 
@@ -238,6 +240,8 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeaderBeforePayload();
 
         request.write(chunk);
+        logBody(Buffer.buffer(chunk.getBytes()));
+
         return this;
     }
 
@@ -246,6 +250,8 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeaderBeforePayload();
 
         request.write(chunk, enc);
+        logBody(Buffer.buffer(chunk.getBytes()));
+
         return this;
     }
 
@@ -276,6 +282,7 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeader(Buffer.buffer(chunk));
 
         request.end(chunk);
+        logBody(Buffer.buffer(chunk.getBytes()));
     }
 
     @Override
@@ -283,6 +290,7 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeader(Buffer.buffer(chunk, enc));
 
         request.end(chunk, enc);
+        logBody(Buffer.buffer(chunk.getBytes()));
     }
 
     @Override
@@ -290,6 +298,7 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeader(chunk);
 
         request.end(chunk);
+        logBody(chunk);
     }
 
     @Override
@@ -297,6 +306,7 @@ public class S3ClientRequest implements HttpClientRequest {
         initAuthenticationHeader(Buffer.buffer());
 
         request.end();
+        logBody(Buffer.buffer());
     }
 
     @Override
@@ -376,7 +386,7 @@ public class S3ClientRequest implements HttpClientRequest {
                     .canonicalQueryString(decodedQueryString)
                     .awsSecretKey(awsSecretKey);
 
-            headers().set(S3Headers.DATE.getValue(), signatureBuilder.makeSignatureFormattedDate());
+            headers().set(Headers.X_AMZ_DATE, signatureBuilder.makeSignatureFormattedDate());
 
             for (Map.Entry<String, String> entry : headers()) {
                 signatureBuilder.header(entry.getKey(), entry.getValue());
@@ -384,9 +394,9 @@ public class S3ClientRequest implements HttpClientRequest {
 
             if (signPayload) {
                 signatureBuilder.payload(payload.getBytes());
-                headers().set(S3Headers.CONTENT_SHA.getValue(), signatureBuilder.getPayloadHash());
+                headers().set(Headers.X_AMZ_CONTENT_SHA256, signatureBuilder.getPayloadHash());
             } else {
-                headers().set(S3Headers.CONTENT_SHA.getValue(), AWS4SignatureBuilder.UNSIGNED_PAYLOAD);
+                headers().set(Headers.X_AMZ_CONTENT_SHA256, AWS4SignatureBuilder.UNSIGNED_PAYLOAD);
             }
 
             log.info("S3 toSign:\n{}", signatureBuilder.makeCanonicalRequest());
@@ -401,15 +411,21 @@ public class S3ClientRequest implements HttpClientRequest {
         }
     }
 
-    public boolean isAuthenticated() {
+    private void logBody(Buffer body) {
+        if (log.isDebugEnabled()) {
+            log.debug("Request Body: {}", new String(body.getBytes(), Charsets.UTF_8));
+        }
+    }
+
+    private boolean isAuthenticated() {
         return awsAccessKey != null && awsSecretKey != null;
     }
 
-    public void setAwsAccessKey(String awsAccessKey) {
+    private void setAwsAccessKey(String awsAccessKey) {
         this.awsAccessKey = awsAccessKey;
     }
 
-    public String getMethod() {
+    private String getMethod() {
         return method;
     }
 }

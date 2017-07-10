@@ -13,28 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hubrick.vertx.s3.model;
+package com.hubrick.vertx.s3.model.request;
 
+import io.vertx.core.MultiMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 3.0.0
  */
-public class PutObjectRequest {
+public class InitMultipartUploadRequest {
 
     private String cacheControl;
     private String contentDisposition;
     private String contentEncoding;
-    private String contentMD5;
     private String contentType;
-    private String expect;
     private String expires;
 
+    private MultiMap amzMeta = MultiMap.caseInsensitiveMultiMap();
     private String amzStorageClass;
-    private String amzTagging;
     private String amzWebsiteRedirectLocation;
 
     private String amzAcl;
@@ -44,82 +43,77 @@ public class PutObjectRequest {
     private String amzGrantWriteAcp;
     private String amzGrantFullControl;
 
-    public PutObjectRequest withCacheControl(String cacheControl) {
+    public InitMultipartUploadRequest withCacheControl(String cacheControl) {
         this.cacheControl = cacheControl;
         return this;
     }
 
-    public PutObjectRequest withContentDisposition(String contentDisposition) {
+    public InitMultipartUploadRequest withContentDisposition(String contentDisposition) {
         this.contentDisposition = contentDisposition;
         return this;
     }
 
-    public PutObjectRequest withContentEncoding(String contentEncoding) {
+    public InitMultipartUploadRequest withContentEncoding(String contentEncoding) {
         this.contentEncoding = contentEncoding;
         return this;
     }
 
-    public PutObjectRequest withContentMD5(String contentMD5) {
-        this.contentMD5 = contentMD5;
-        return this;
-    }
-
-    public PutObjectRequest withContentType(String contentType) {
+    public InitMultipartUploadRequest withContentType(String contentType) {
         this.contentType = contentType;
         return this;
     }
 
-    public PutObjectRequest withExpect(String expect) {
-        this.expect = expect;
-        return this;
-    }
-
-    public PutObjectRequest withExpires(String expires) {
+    public InitMultipartUploadRequest withExpires(String expires) {
         this.expires = expires;
         return this;
     }
 
-    public PutObjectRequest withAmzStorageClass(String amzStorageClass) {
+    public InitMultipartUploadRequest withAmzMeta(String key, String value) {
+        this.amzMeta.add(key, value);
+        return this;
+    }
+
+    public InitMultipartUploadRequest withAmzMeta(MultiMap amzMeta) {
+        this.amzMeta.addAll(amzMeta);
+        return this;
+    }
+
+    public InitMultipartUploadRequest withAmzStorageClass(String amzStorageClass) {
         this.amzStorageClass = amzStorageClass;
         return this;
     }
 
-    public PutObjectRequest withAmzTagging(String amzTagging) {
-        this.amzTagging = amzTagging;
-        return this;
-    }
-
-    public PutObjectRequest withAmzWebsiteRedirectLocation(String amzWebsiteRedirectLocation) {
+    public InitMultipartUploadRequest withAmzWebsiteRedirectLocation(String amzWebsiteRedirectLocation) {
         this.amzWebsiteRedirectLocation = amzWebsiteRedirectLocation;
         return this;
     }
 
-    public PutObjectRequest withAmzAcl(String amzAcl) {
+    public InitMultipartUploadRequest withAmzAcl(String amzAcl) {
         this.amzAcl = amzAcl;
         return this;
     }
 
-    public PutObjectRequest withAmzGrantRead(String amzGrantRead) {
+    public InitMultipartUploadRequest withAmzGrantRead(String amzGrantRead) {
         this.amzGrantRead = amzGrantRead;
         return this;
     }
 
-    public PutObjectRequest withAmzGrantWrite(String amzGrantWrite) {
+    public InitMultipartUploadRequest withAmzGrantWrite(String amzGrantWrite) {
         this.amzGrantWrite = amzGrantWrite;
         return this;
     }
 
-    public PutObjectRequest withAmzGrantReadAcp(String amzGrantReadAcp) {
+    public InitMultipartUploadRequest withAmzGrantReadAcp(String amzGrantReadAcp) {
         this.amzGrantReadAcp = amzGrantReadAcp;
         return this;
     }
 
-    public PutObjectRequest withAmzGrantWriteAcp(String amzGrantWriteAcp) {
+    public InitMultipartUploadRequest withAmzGrantWriteAcp(String amzGrantWriteAcp) {
         this.amzGrantWriteAcp = amzGrantWriteAcp;
         return this;
     }
 
-    public PutObjectRequest withAmzGrantFullControl(String amzGrantFullControl) {
+    public InitMultipartUploadRequest withAmzGrantFullControl(String amzGrantFullControl) {
         this.amzGrantFullControl = amzGrantFullControl;
         return this;
     }
@@ -140,24 +134,16 @@ public class PutObjectRequest {
         return contentType;
     }
 
-    public String getContentMD5() {
-        return contentMD5;
-    }
-
-    public String getExpect() {
-        return expect;
-    }
-
     public String getExpires() {
         return expires;
     }
 
-    public String getAmzStorageClass() {
-        return amzStorageClass;
+    public MultiMap getAmzMeta() {
+        return amzMeta;
     }
 
-    public String getAmzTagging() {
-        return amzTagging;
+    public String getAmzStorageClass() {
+        return amzStorageClass;
     }
 
     public String getAmzWebsiteRedirectLocation() {

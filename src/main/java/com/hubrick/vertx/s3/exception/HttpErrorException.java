@@ -15,7 +15,7 @@
  */
 package com.hubrick.vertx.s3.exception;
 
-import com.hubrick.vertx.s3.model.ErrorResponse;
+import com.hubrick.vertx.s3.model.response.ErrorResponse;
 
 /**
  * @author Emir Dizdarevic

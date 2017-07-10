@@ -15,16 +15,31 @@
  */
 package com.hubrick.vertx.s3.client;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.hubrick.vertx.s3.AbstractFunctionalTest;
 import com.hubrick.vertx.s3.S3TestCredentials;
 import com.hubrick.vertx.s3.exception.HttpErrorException;
-import com.hubrick.vertx.s3.model.CopyObjectRequest;
-import com.hubrick.vertx.s3.model.DeleteObjectRequest;
-import com.hubrick.vertx.s3.model.GetBucketRequest;
-import com.hubrick.vertx.s3.model.GetObjectRequest;
-import com.hubrick.vertx.s3.model.HeadObjectRequest;
-import com.hubrick.vertx.s3.model.PutObjectRequest;
+import com.hubrick.vertx.s3.model.Part;
+import com.hubrick.vertx.s3.model.Response;
+import com.hubrick.vertx.s3.model.header.CommonResponseHeaders;
+import com.hubrick.vertx.s3.model.header.CompleteMultipartUploadResponseHeaders;
+import com.hubrick.vertx.s3.model.header.ContinueMultipartUploadResponseHeaders;
+import com.hubrick.vertx.s3.model.header.InitMultipartUploadResponseHeaders;
+import com.hubrick.vertx.s3.model.request.AbortMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.CompleteMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.ContinueMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.CopyObjectRequest;
+import com.hubrick.vertx.s3.model.request.DeleteObjectRequest;
+import com.hubrick.vertx.s3.model.request.GetBucketRequest;
+import com.hubrick.vertx.s3.model.request.GetObjectRequest;
+import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
+import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.PutObjectRequest;
+import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
+import com.hubrick.vertx.s3.model.response.MultipartUploadWriteStream;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -47,6 +62,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -122,10 +138,11 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     void verifyGetObject(TestContext testContext) {
         final Async async = testContext.async();
         s3Client.getObject("bucket", "key", new GetObjectRequest(),
-                (response) -> {
-                    assertThat(testContext, response.statusCode(), is(200));
+                (getObjectResponse) -> {
+                    assertThat(testContext, getObjectResponse.getHeader(), notNullValue());
+                    assertThat(testContext, getObjectResponse.getData(), notNullValue());
 
-                    response.bodyHandler(buffer -> {
+                    getObjectResponse.getData().handler(buffer -> {
                         assertThat(testContext, new String(buffer.getBytes(), StandardCharsets.UTF_8), is("response"));
                         async.complete();
 
@@ -170,7 +187,8 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 "/bucket/key",
                 200,
                 "test".getBytes(),
-                "response".getBytes(),
+                "<>".getBytes(),
+                Collections.emptyList(),
                 expectedHeaders
         );
     }
@@ -183,6 +201,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 403,
                 "test".getBytes(),
                 Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                Collections.emptyList(),
                 expectedHeaders
         );
     }
@@ -190,16 +209,10 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     void verifyPutObject(final TestContext testContext) {
 
         final Async async = testContext.async();
-        s3Client.putObject("bucket", "key", new PutObjectRequest(),
-                Buffer.buffer("test"),
-                (response) -> {
-                    assertThat(testContext, response.statusCode(), is(200));
-
-                    response.bodyHandler(buffer -> {
-                        assertThat(testContext, new String(buffer.getBytes(), StandardCharsets.UTF_8), is("response"));
-                        async.complete();
-
-                    });
+        s3Client.putObject("bucket", "key", new PutObjectRequest(Buffer.buffer("test")),
+                (putResponseHeaders) -> {
+                    assertThat(testContext, putResponseHeaders, notNullValue());
+                    async.complete();
                 },
                 testContext::fail);
     }
@@ -207,8 +220,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     void verifyPutObjectErrorResponse(final TestContext testContext) {
 
         final Async async = testContext.async();
-        s3Client.putObject("bucket", "key", new PutObjectRequest(),
-                Buffer.buffer("test"),
+        s3Client.putObject("bucket", "key", new PutObjectRequest(Buffer.buffer("test")),
                 (result) -> {
                     testContext.fail("Exceptions should be thrown");
                 },
@@ -223,13 +235,271 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
         );
     }
 
+    void mockInitMultipartUpload(String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("uploads", ImmutableList.of("")),
+                "POST",
+                "/bucket/key",
+                200,
+                ("<InitiateMultipartUploadResult><Bucket>bucket</Bucket><Key>key</Key><UploadId>" + uploadId + "</UploadId></InitiateMultipartUploadResult>").getBytes(),
+                expectedHeaders
+        );
+    }
+
+    void mockInitMultipartUploadErrorResponse(Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("uploads", ImmutableList.of("")),
+                "POST",
+                "/bucket/key",
+                403,
+                Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                expectedHeaders
+        );
+    }
+
+    void verifyInitMultipartUpload(final TestContext testContext) {
+
+        final Async async = testContext.async();
+        callInitMultipartUpload(testContext, event -> {
+            assertThat(testContext, event.getData(), notNullValue());
+            assertThat(testContext, event.getHeader(), notNullValue());
+
+            async.complete();
+        });
+    }
+
+    void verifyInitMultipartUploadErrorResponse(final TestContext testContext) {
+
+        final Async async = testContext.async();
+        s3Client.initMultipartUpload("bucket", "key", new InitMultipartUploadRequest(),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void callInitMultipartUpload(final TestContext testContext, Handler<Response<InitMultipartUploadResponseHeaders, MultipartUploadWriteStream>> handler) {
+
+        s3Client.initMultipartUpload(
+                "bucket",
+                "key",
+                new InitMultipartUploadRequest(),
+                handler,
+                testContext::fail
+        );
+    }
+
+
+    void mockContinueMultipartUpload(Integer partNumber, String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("partNumber", ImmutableList.of(partNumber.toString()), "uploadId", ImmutableList.of(uploadId)),
+                "PUT",
+                "/bucket/key",
+                200,
+                "<>".getBytes(),
+                ImmutableList.of(new Header("ETag", "someetag")),
+                expectedHeaders
+        );
+    }
+
+    void mockContinueMultipartUploadErrorResponse(Integer partNumber, String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("partNumber", ImmutableList.of(partNumber.toString()), "uploadId", ImmutableList.of(uploadId)),
+                "PUT",
+                "/bucket/key",
+                403,
+                Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                expectedHeaders
+        );
+    }
+
+    void verifyContinueMultipartUpload(final TestContext testContext, Integer partNumber, String uploadId) {
+
+        final Async async = testContext.async();
+        callContinueMultipartUpload(testContext, partNumber, uploadId, event -> {
+            assertThat(testContext, event.getData(), nullValue());
+            assertThat(testContext, event.getHeader(), notNullValue());
+
+            async.complete();
+        });
+    }
+
+    void verifyContinueMultipartUploadErrorResponse(final TestContext testContext, Integer partNumber, String uploadId) {
+
+        final Async async = testContext.async();
+        s3Client.continueMultipartUpload(
+                "bucket",
+                "key",
+                new ContinueMultipartUploadRequest(Buffer.buffer("whatever".getBytes()), partNumber, uploadId),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void callContinueMultipartUpload(final TestContext testContext, Integer partNumber, String uploadId, Handler<Response<ContinueMultipartUploadResponseHeaders, Void>> handler) {
+
+        s3Client.continueMultipartUpload(
+                "bucket",
+                "key",
+                new ContinueMultipartUploadRequest(Buffer.buffer("some data".getBytes()), partNumber, uploadId),
+                handler,
+                testContext::fail
+        );
+    }
+
+    void mockCompleteMultipartUpload(String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("uploadId", ImmutableList.of(uploadId)),
+                "POST",
+                "/bucket/key",
+                200,
+                "<CompleteMultipartUploadResult><Location>whatever</Location><Bucket>bucket</Bucket><Key>key</Key><ETag>whatever</ETag></CompleteMultipartUploadResult>".getBytes(),
+                expectedHeaders
+        );
+    }
+
+    void mockCompleteMultipartUploadErrorResponse(String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("uploadId", ImmutableList.of(uploadId)),
+                "POST",
+                "/bucket/key",
+                403,
+                Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                expectedHeaders
+        );
+    }
+
+    void verifyCompleteMultipartUpload(final TestContext testContext, String uploadId) {
+
+        final Async async = testContext.async();
+        callCompleteMultipartUpload(testContext, Collections.emptyList(), uploadId, event -> {
+            assertThat(testContext, event.getData(), notNullValue());
+            assertThat(testContext, event.getHeader(), notNullValue());
+
+            async.complete();
+        });
+    }
+
+    void verifyCompleteMultipartUploadErrorResponse(final TestContext testContext, String uploadId) {
+
+        final Async async = testContext.async();
+        s3Client.completeMultipartUpload(
+                "bucket",
+                "key",
+                new CompleteMultipartUploadRequest(uploadId, Collections.emptyList()),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void callCompleteMultipartUpload(final TestContext testContext, List<Part> parts, String uploadId, Handler<Response<CompleteMultipartUploadResponseHeaders, CompleteMultipartUploadResponse>> handler) {
+
+        s3Client.completeMultipartUpload(
+                "bucket",
+                "key",
+                new CompleteMultipartUploadRequest(uploadId, parts),
+                handler,
+                testContext::fail
+        );
+    }
+
+    void mockAbortMultipartUpload(String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("uploadId", ImmutableList.of(uploadId)),
+                "DELETE",
+                "/bucket/key",
+                200,
+                "<>".getBytes(),
+                expectedHeaders
+        );
+    }
+
+    void mockAbortMultipartUploadErrorResponse(String uploadId, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("uploadId", ImmutableList.of(uploadId)),
+                "DELETE",
+                "/bucket/key",
+                403,
+                Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                expectedHeaders
+        );
+    }
+
+    void verifyAbortMultipartUpload(final TestContext testContext, String uploadId) {
+        final Async async = testContext.async();
+        callAbortMultipartUpload(testContext, uploadId, event -> {
+            assertThat(testContext, event.getData(), nullValue());
+            assertThat(testContext, event.getHeader(), notNullValue());
+
+            async.complete();
+        });
+    }
+
+    void verifyAbortMultipartUploadErrorResponse(final TestContext testContext, String uploadId) {
+
+        final Async async = testContext.async();
+        s3Client.abortMultipartUpload(
+                "bucket",
+                "key",
+                new AbortMultipartUploadRequest(uploadId),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void callAbortMultipartUpload(final TestContext testContext, String uploadId, Handler<Response<CommonResponseHeaders, Void>> handler) {
+
+        s3Client.abortMultipartUpload(
+                "bucket",
+                "key",
+                new AbortMultipartUploadRequest(uploadId),
+                handler,
+                testContext::fail
+        );
+    }
+
     void mockDeleteObject(Header... expectedHeaders) throws IOException {
         mock(
                 Collections.emptyMap(),
                 "DELETE",
                 "/bucket/key",
                 200,
-                "response".getBytes(),
+                "<>".getBytes(),
                 expectedHeaders
         );
     }
@@ -249,14 +519,9 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
         final Async async = testContext.async();
         s3Client.deleteObject("bucket", "key", new DeleteObjectRequest(),
-                (response) -> {
-                    assertThat(testContext, response.statusCode(), is(200));
-
-                    response.bodyHandler(buffer -> {
-                        assertThat(testContext, new String(buffer.getBytes(), StandardCharsets.UTF_8), is("response"));
-                        async.complete();
-
-                    });
+                (commonResponseHeaders) -> {
+                    assertThat(testContext, commonResponseHeaders, notNullValue());
+                    async.complete();
                 },
                 testContext::fail);
     }
@@ -286,7 +551,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 "PUT",
                 "/destinationBucket/destinationKey",
                 200,
-                "response".getBytes(),
+                "<CopyObjectResult></CopyObjectResult>".getBytes(),
                 ArrayUtils.add(expectedHeaders, Header.header("X-Amz-Copy-Source", "/sourceBucket/sourceKey"))
         );
     }
@@ -309,14 +574,10 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 "sourceBucket", "sourceKey",
                 "destinationBucket", "destinationKey",
                 new CopyObjectRequest(),
-                (response) -> {
-                    assertThat(testContext, response.statusCode(), is(200));
-
-                    response.bodyHandler(buffer -> {
-                        assertThat(testContext, new String(buffer.getBytes(), StandardCharsets.UTF_8), is("response"));
-                        async.complete();
-
-                    });
+                (copyObjectResponse) -> {
+                    assertThat(testContext, copyObjectResponse.getHeader(), notNullValue());
+                    assertThat(testContext, copyObjectResponse.getData(), notNullValue());
+                    async.complete();
                 },
                 testContext::fail);
     }
@@ -373,8 +634,9 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                         .withContinuationToken("14HF6Dfbr92F1EYlZIrMwxPYKQl5lD/mbwiw5+Nlrn1lYIZX3YGzo16Dgz+dxbxFeNGmLsnzwnbbuQM0CMl0krVwh8TBj8nCmNtq/iQCK6gzln8z3U4C71Mh2HyEMHcMgrZGR/akosVql7/AIctj6rA=="),
                 (getBucketRespone) -> {
                     assertThat(testContext, getBucketRespone, notNullValue());
-                    assertThat(testContext, getBucketRespone.getContentsList(), hasSize(5));
-                    assertThat(testContext, getBucketRespone.getName(), is("bucket"));
+                    assertThat(testContext, getBucketRespone.getHeader().getContentType(), is("application/xml;charset=UTF-8"));
+                    assertThat(testContext, getBucketRespone.getData().getContentsList(), hasSize(5));
+                    assertThat(testContext, getBucketRespone.getData().getName(), is("bucket"));
 
                     async.complete();
                 },
@@ -404,10 +666,14 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     }
 
     void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] responseBody, Header... expectedHeaders) throws IOException {
-        mock(expectedQueryParams, method, path, statusCode, null, responseBody, expectedHeaders);
+        mock(expectedQueryParams, method, path, statusCode, null, responseBody, Collections.emptyList(), expectedHeaders);
     }
 
-    void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] requestBody, byte[] responseBody, Header... expectedHeaders) throws IOException {
+    void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] responseBody, List<Header> responseHeaders, Header... expectedHeaders) throws IOException {
+        mock(expectedQueryParams, method, path, statusCode, null, responseBody, responseHeaders, expectedHeaders);
+    }
+
+    void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] requestBody, byte[] responseBody, List<Header> responseHeaders, Header... expectedHeaders) throws IOException {
         final HttpRequest httpRequest = request()
                 .withMethod(method)
                 .withPath(path)
@@ -423,6 +689,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
         ).respond(
                 response()
                         .withStatusCode(statusCode)
+                        .withHeaders(responseHeaders)
                         .withHeader(Header.header("Content-Type", "application/xml;charset=UTF-8"))
                         .withBody(responseBody)
         );

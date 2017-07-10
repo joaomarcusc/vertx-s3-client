@@ -19,6 +19,7 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * @author marcus
@@ -50,6 +51,34 @@ public class S3ClientWithoutCredentialsTest extends AbstractS3ClientTest {
         mockPutObject();
 
         verifyPutObject(testContext);
+    }
+
+    @Test
+    public void testInitMultipartUpload(TestContext testContext) throws IOException {
+        mockInitMultipartUpload(UUID.randomUUID().toString());
+
+        verifyInitMultipartUpload(testContext);
+    }
+
+    @Test
+    public void testContinueMultipartUpload(TestContext testContext) throws IOException {
+        mockContinueMultipartUpload(1, "someid");
+
+        verifyContinueMultipartUpload(testContext, 1, "someid");
+    }
+
+    @Test
+    public void testCompleteMultipartUpload(TestContext testContext) throws IOException {
+        mockCompleteMultipartUpload("someid");
+
+        verifyCompleteMultipartUpload(testContext, "someid");
+    }
+
+    @Test
+    public void testAbortMultipartUpload(TestContext testContext) throws IOException {
+        mockAbortMultipartUpload("someid");
+
+        verifyAbortMultipartUpload(testContext, "someid");
     }
 
     @Test
