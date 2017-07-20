@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hubrick.vertx.s3.model;
+package com.hubrick.vertx.s3.model.response;
 
+import com.hubrick.vertx.s3.model.CommonPrefixes;
+import com.hubrick.vertx.s3.model.Contents;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;

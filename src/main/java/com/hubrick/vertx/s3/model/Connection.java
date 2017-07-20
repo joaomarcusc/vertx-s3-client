@@ -13,40 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hubrick.vertx.s3;
+package com.hubrick.vertx.s3.model;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * @author Emir Dizdarevic
- * @since 1.0.0
+ * @since 3.0.0
  */
-public enum S3Headers {
-    ACL_HEADER("X-Amz-Acl"),
-    COPY_SOURCE_HEADER("X-Amz-Copy-Source"),
-    DATE("X-Amz-Date"),
-    CONTENT_SHA("X-Amz-Content-Sha256");
+public enum Connection {
+    OPEN,
+    CLOSE;
 
-    private static final Map<String, S3Headers> REVERSE_LOOKUP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
+    private static Map<String, Connection> REVERSE_LOOKUP = new HashMap<>();
     static {
-        for (S3Headers s3Headers : values()) {
-            REVERSE_LOOKUP.put(s3Headers.getValue(), s3Headers);
+        for(Connection connection : values()) {
+            REVERSE_LOOKUP.put(connection.name().toLowerCase(), connection);
         }
     }
 
-    private final String value;
-
-    S3Headers(String value) {
-        this.value = value;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public S3Headers fromString(String value) {
+    public static Connection fromString(String value) {
         return REVERSE_LOOKUP.get(value);
+    }
+
+    @Override
+    public String toString() {
+        return name().toLowerCase();
     }
 }

@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.mockserver.model.Header;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * @author marcus
@@ -63,6 +64,55 @@ public class S3ClientWithCredentialsTest extends AbstractS3ClientTest {
         );
 
         verifyPutObject(testContext);
+    }
+
+    @Test
+    public void testInitMultipartUpload(TestContext testContext) throws IOException {
+        mockInitMultipartUpload(
+                UUID.randomUUID().toString(),
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-date, Signature=18d1d5fe4511763bc95c86e532e492467848c80c1b8f0cab745cf2ac2a7dcc5f")
+        );
+
+        verifyInitMultipartUpload(testContext);
+    }
+
+    @Test
+    public void testContinueMultipartUpload(TestContext testContext) throws IOException {
+        mockContinueMultipartUpload(
+                1,
+                "someid",
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-date, Signature=2e50b12ee253fa9e8be77d64d3a06adbf066fe9eef3d97332676bdacf5860e2a")
+        );
+
+        verifyContinueMultipartUpload(testContext, 1, "someid");
+    }
+
+    @Test
+    public void testCompleteMultipartUpload(TestContext testContext) throws IOException {
+        mockCompleteMultipartUpload(
+                "someid",
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=bd1a4688a9f54536517dbb4a2a3ddfcd762f955950170a1dad75085a990586e4")
+        );
+
+        verifyCompleteMultipartUpload(testContext, "someid");
+    }
+
+    @Test
+    public void testAbortMultipartUpload(TestContext testContext) throws IOException {
+        mockAbortMultipartUpload(
+                "someid",
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-date, Signature=f5b73d8b2a130264055219a27f1e9dece8f955431b282a5f8c930846aeabd59a")
+        );
+
+        verifyAbortMultipartUpload(testContext, "someid");
     }
 
     @Test

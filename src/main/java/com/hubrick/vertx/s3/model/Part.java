@@ -15,25 +15,48 @@
  */
 package com.hubrick.vertx.s3.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 3.0.0
  */
-public class DeleteObjectRequest {
+@XmlRootElement(name = "Part")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class Part {
 
-    private String amzMfa;
+    @XmlElement(name = "PartNumber", required = true)
+    private Integer partNumber;
 
-    public DeleteObjectRequest withAmzMfa(String amzMfa) {
-        this.amzMfa = amzMfa;
-        return this;
+    @XmlElement(name = "ETag", required = true)
+    private String eTag;
+
+    protected Part(){}
+
+    public Part(Integer partNumber, String eTag) {
+        checkNotNull(partNumber, "partNumber must not be null");
+        checkNotNull(StringUtils.trimToNull(eTag), "eTag must not be null");
+
+        this.partNumber = partNumber;
+        this.eTag = eTag;
     }
 
-    public String getAmzMfa() {
-        return amzMfa;
+    public Integer getPartNumber() {
+        return partNumber;
+    }
+
+    public String geteTag() {
+        return eTag;
     }
 
     @Override
