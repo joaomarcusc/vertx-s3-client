@@ -14,7 +14,7 @@ A fully functional Vert.x client for S3
 <dependency>
     <groupId>com.hubrick.vertx</groupId>
     <artifactId>vertx-s3-client</artifactId>
-    <version>2.1.0</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
@@ -33,16 +33,15 @@ A fully functional Vert.x client for S3
                 "bucket", 
                 "key",
                 new GetObjectRequest().withResponseContentType("application/json"),
-                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
                 Throwable::printStackTrace
         );
 
         s3Client.putObject(
                 "bucket", 
                 "key",
-                new PutObjectRequest().withContentType("application/json"),
-                Buffer.buffer("test"),
-                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                new PutObjectRequest(Buffer.buffer("test")).withContentType("application/json"),
+                response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
                 Throwable::printStackTrace
         );
         
@@ -50,7 +49,7 @@ A fully functional Vert.x client for S3
                 "bucket", 
                 "key",
                 new DeleteObjectRequest(),
-                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
                 Throwable::printStackTrace
         );
         
@@ -60,7 +59,7 @@ A fully functional Vert.x client for S3
                 "destinationBucket", 
                 "destinationKey",
                 new CopyObjectRequest(),
-                response -> System.out.println("Response from AWS: " + response.statusMessage()),
+                response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
                 Throwable::printStackTrace
         );
         
@@ -68,7 +67,7 @@ A fully functional Vert.x client for S3
                 "bucket", 
                 "key",
                 new HeadObjectRequest(),
-                headers -> System.out.println("Response from AWS: " + headers.get("Content-Type")),
+                response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
                 Throwable::printStackTrace
         );
         
@@ -76,7 +75,7 @@ A fully functional Vert.x client for S3
         s3Client.getBucket(
                 "bucket",
                 new GetBucketRequest().withPrefix("prefix"),
-                getBucketRespone -> System.out.println("Response from AWS: " + getBucketRespone.getName()),
+                response -> System.out.println("Response from AWS: " + response.getData().getName()),
                 Throwable::printStackTrace
         );
 ```
