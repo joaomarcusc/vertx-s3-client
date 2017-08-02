@@ -19,6 +19,8 @@ A fully functional Vert.x client for S3
 ```
 
 ## How to use
+
+### Common operations
 ```java
         final S3ClientOptions clientOptions = new S3ClientOptions()
                 .setAwsRegion("eu-central-1")
@@ -78,6 +80,37 @@ A fully functional Vert.x client for S3
                 response -> System.out.println("Response from AWS: " + response.getData().getName()),
                 Throwable::printStackTrace
         );
+```
+
+### Multipart upload
+```java
+        final S3ClientOptions clientOptions = new S3ClientOptions()
+                .setAwsRegion("eu-central-1")
+                .setAwsServiceName("s3")
+                .setAwsAccessKey("AKIDEXAMPLE")
+                .setAwsSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+                //.setSignPayload(true);
+
+        final S3Client s3Client = new S3Client(vertx, clientOptions);
+
+        // Stream any file from disk to S3
+        vertx.fileSystem().open(filePath, openOptions, asyncFile -> {
+        
+            asyncFile.pause();
+            s3Client.initMultipartUpload(
+                "bucket",
+                "someid",
+                new InitMultipartUploadRequest().withContentType("video/mp4"),
+                response -> {
+                    asyncFile.endHandler(aVoid -> response.getData().end());
+                    asyncFile.exceptionHandler(Throwable::printStackTrace);
+                    final Pump pump = Pump.pump(asyncFile, response.getData());
+                    pump.start();
+                    asyncFile.resume();
+                },
+                Throwable::printStackTrace
+            );
+        });
 ```
 
 ## Error handling
