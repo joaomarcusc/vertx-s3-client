@@ -1014,8 +1014,8 @@ public class S3Client {
                 try {
                     if (event.statusCode() / 100 != 2) {
                         log.warn("Error occurred. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
-                        if (log.isDebugEnabled()) {
-                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+                        if (log.isInfoEnabled()) {
+                            log.info("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
                         }
 
                         exceptionHandler.handle(
@@ -1070,8 +1070,8 @@ public class S3Client {
                 try {
                     if (event.statusCode() / 100 != 2) {
                         log.warn("Error occurred. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
-                        if (log.isDebugEnabled()) {
-                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+                        if (log.isInfoEnabled()) {
+                            log.info("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
                         }
 
                         exceptionHandler.handle(
