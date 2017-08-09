@@ -987,6 +987,7 @@ public class S3Client {
                     }
                 });
             } else {
+                log.info("Request successful. Status: {}, Message: {}", response.statusCode(), response.statusMessage());
                 successHandler.handle(new ResponseWithBody<>(responseHeaderMapper.map(response.headers()), response));
             }
         }
@@ -1027,8 +1028,8 @@ public class S3Client {
                                 )
                         );
                     } else {
+                        log.info("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
                         if (log.isDebugEnabled()) {
-                            log.debug("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
                             log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
                         }
                         successHandler.handle(new ResponseWithBody<>(responseHeaderMapper.map(event.headers()), (B) jaxbUnmarshaller.unmarshal(convertToSaxSource(buffer.getBytes()))));
@@ -1083,8 +1084,8 @@ public class S3Client {
                                 )
                         );
                     } else {
+                        log.info("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
                         if (log.isDebugEnabled()) {
-                            log.debug("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
                             log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
                         }
                         successHandler.handle(new HeaderOnlyResponse<>(responseHeaderMapper.map(event.headers())));
