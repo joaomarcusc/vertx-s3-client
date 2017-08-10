@@ -15,6 +15,7 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
+import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -39,7 +40,7 @@ public class PutObjectRequest {
     private String expires;
 
     private MultiMap amzMeta = MultiMap.caseInsensitiveMultiMap();
-    private String amzStorageClass;
+    private StorageClass amzStorageClass;
     private String amzTagging;
     private String amzWebsiteRedirectLocation;
 
@@ -96,7 +97,7 @@ public class PutObjectRequest {
         return this;
     }
 
-    public PutObjectRequest withAmzStorageClass(String amzStorageClass) {
+    public PutObjectRequest withAmzStorageClass(StorageClass amzStorageClass) {
         this.amzStorageClass = amzStorageClass;
         return this;
     }
@@ -173,7 +174,7 @@ public class PutObjectRequest {
         return amzMeta;
     }
 
-    public String getAmzStorageClass() {
+    public StorageClass getAmzStorageClass() {
         return amzStorageClass;
     }
 

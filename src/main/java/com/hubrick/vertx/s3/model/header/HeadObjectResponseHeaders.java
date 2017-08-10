@@ -16,6 +16,7 @@
 package com.hubrick.vertx.s3.model.header;
 
 import com.hubrick.vertx.s3.model.ReplicationStatus;
+import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 
 /**
@@ -29,7 +30,7 @@ public class HeadObjectResponseHeaders extends ServerSideEncryptionResponseHeade
     private String amzMissingMeta;
     private ReplicationStatus amzReplicationStatus;
     private String amzRestore;
-    private String amzStorageClass;
+    private StorageClass amzStorageClass;
 
     public String getAmzExpiration() {
         return amzExpiration;
@@ -71,11 +72,11 @@ public class HeadObjectResponseHeaders extends ServerSideEncryptionResponseHeade
         this.amzRestore = amzRestore;
     }
 
-    public String getAmzStorageClass() {
+    public StorageClass getAmzStorageClass() {
         return amzStorageClass;
     }
 
-    public void setAmzStorageClass(String amzStorageClass) {
+    public void setAmzStorageClass(StorageClass amzStorageClass) {
         this.amzStorageClass = amzStorageClass;
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
+import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -33,7 +34,7 @@ public class InitMultipartUploadRequest {
     private String expires;
 
     private MultiMap amzMeta = MultiMap.caseInsensitiveMultiMap();
-    private String amzStorageClass;
+    private StorageClass amzStorageClass;
     private String amzWebsiteRedirectLocation;
 
     private String amzAcl;
@@ -78,7 +79,7 @@ public class InitMultipartUploadRequest {
         return this;
     }
 
-    public InitMultipartUploadRequest withAmzStorageClass(String amzStorageClass) {
+    public InitMultipartUploadRequest withAmzStorageClass(StorageClass amzStorageClass) {
         this.amzStorageClass = amzStorageClass;
         return this;
     }
@@ -142,7 +143,7 @@ public class InitMultipartUploadRequest {
         return amzMeta;
     }
 
-    public String getAmzStorageClass() {
+    public StorageClass getAmzStorageClass() {
         return amzStorageClass;
     }
 
