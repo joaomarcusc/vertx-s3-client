@@ -15,6 +15,9 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
+import com.hubrick.vertx.s3.model.Directive;
+import com.hubrick.vertx.s3.model.StorageClass;
+import io.vertx.core.MultiMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -25,16 +28,58 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class CopyObjectRequest {
 
-    private String amzMetadataDirective;
+    private String cacheControl;
+    private String contentDisposition;
+    private String contentEncoding;
+    private String contentType;
+    private String expires;
+
+    private MultiMap amzMeta = MultiMap.caseInsensitiveMultiMap();
+    private Directive amzMetadataDirective;
     private String amzCopySourceIfMatch;
     private String amzCopySourceIfNoneMatch;
     private String amzCopySourceIfUnmodifiedSince;
     private String amzCopySourceIfModifiedSince;
-    private String amzStorageClass;
-    private String amzTaggingDirective;
+    private StorageClass amzStorageClass;
+    private Directive amzTaggingDirective;
     private String amzWebsiteRedirectLocation;
 
-    public CopyObjectRequest withAmzMetadataDirective(String amzMetadataDirective) {
+    public CopyObjectRequest withCacheControl(String cacheControl) {
+        this.cacheControl = cacheControl;
+        return this;
+    }
+
+    public CopyObjectRequest withContentDisposition(String contentDisposition) {
+        this.contentDisposition = contentDisposition;
+        return this;
+    }
+
+    public CopyObjectRequest withContentEncoding(String contentEncoding) {
+        this.contentEncoding = contentEncoding;
+        return this;
+    }
+
+    public CopyObjectRequest withContentType(String contentType) {
+        this.contentType = contentType;
+        return this;
+    }
+
+    public CopyObjectRequest withExpires(String expires) {
+        this.expires = expires;
+        return this;
+    }
+
+    public CopyObjectRequest withAmzMeta(String key, String value) {
+        this.amzMeta.add(key, value);
+        return this;
+    }
+
+    public CopyObjectRequest withAmzMeta(MultiMap amzMeta) {
+        this.amzMeta.addAll(amzMeta);
+        return this;
+    }
+
+    public CopyObjectRequest withAmzMetadataDirective(Directive amzMetadataDirective) {
         this.amzMetadataDirective = amzMetadataDirective;
         return this;
     }
@@ -59,12 +104,12 @@ public class CopyObjectRequest {
         return this;
     }
 
-    public CopyObjectRequest withAmzStorageClass(String amzStorageClass) {
+    public CopyObjectRequest withAmzStorageClass(StorageClass amzStorageClass) {
         this.amzStorageClass = amzStorageClass;
         return this;
     }
 
-    public CopyObjectRequest withAmzTaggingDirective(String amzTaggingDirective) {
+    public CopyObjectRequest withAmzTaggingDirective(Directive amzTaggingDirective) {
         this.amzTaggingDirective = amzTaggingDirective;
         return this;
     }
@@ -74,7 +119,31 @@ public class CopyObjectRequest {
         return this;
     }
 
-    public String getAmzMetadataDirective() {
+    public String getCacheControl() {
+        return cacheControl;
+    }
+
+    public String getContentDisposition() {
+        return contentDisposition;
+    }
+
+    public String getContentEncoding() {
+        return contentEncoding;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public String getExpires() {
+        return expires;
+    }
+
+    public MultiMap getAmzMeta() {
+        return amzMeta;
+    }
+
+    public Directive getAmzMetadataDirective() {
         return amzMetadataDirective;
     }
 
@@ -94,11 +163,11 @@ public class CopyObjectRequest {
         return amzCopySourceIfModifiedSince;
     }
 
-    public String getAmzStorageClass() {
+    public StorageClass getAmzStorageClass() {
         return amzStorageClass;
     }
 
-    public String getAmzTaggingDirective() {
+    public Directive getAmzTaggingDirective() {
         return amzTaggingDirective;
     }
 

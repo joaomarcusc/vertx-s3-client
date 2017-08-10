@@ -21,6 +21,7 @@ import com.hubrick.vertx.s3.exception.HttpErrorException;
 import com.hubrick.vertx.s3.model.HeaderOnlyResponse;
 import com.hubrick.vertx.s3.model.Part;
 import com.hubrick.vertx.s3.model.Response;
+import com.hubrick.vertx.s3.model.StorageClass;
 import com.hubrick.vertx.s3.model.request.AbortMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.CommonPrefixes;
 import com.hubrick.vertx.s3.model.header.CommonResponseHeaders;
@@ -494,8 +495,8 @@ public class S3Client {
         for (Map.Entry<String, String> meta : putObjectRequest.getAmzMeta()) {
             headers.add(Headers.X_AMZ_META_PREFIX + meta.getKey(), StringUtils.trim(meta.getValue()));
         }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzStorageClass()) != null) {
-            headers.add(Headers.X_AMZ_STORAGE_CLASS, StringUtils.trim(putObjectRequest.getAmzStorageClass()));
+        if (putObjectRequest.getAmzStorageClass() != null) {
+            headers.add(Headers.X_AMZ_STORAGE_CLASS, putObjectRequest.getAmzStorageClass().name());
         }
         if (StringUtils.trimToNull(putObjectRequest.getAmzTagging()) != null) {
             headers.add(Headers.X_AMZ_TAGGING, StringUtils.trim(putObjectRequest.getAmzTagging()));
@@ -571,8 +572,8 @@ public class S3Client {
         for (Map.Entry<String, String> meta : multipartPutObjectRequest.getAmzMeta()) {
             headers.add(Headers.X_AMZ_META_PREFIX + meta.getKey(), StringUtils.trim(meta.getValue()));
         }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzStorageClass()) != null) {
-            headers.add(Headers.X_AMZ_STORAGE_CLASS, StringUtils.trim(multipartPutObjectRequest.getAmzStorageClass()));
+        if (multipartPutObjectRequest.getAmzStorageClass() != null) {
+            headers.add(Headers.X_AMZ_STORAGE_CLASS, multipartPutObjectRequest.getAmzStorageClass().name());
         }
         if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzWebsiteRedirectLocation()) != null) {
             headers.add(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION, StringUtils.trim(multipartPutObjectRequest.getAmzWebsiteRedirectLocation()));
@@ -726,8 +727,29 @@ public class S3Client {
     private MultiMap populateCopyObjectHeaders(CopyObjectRequest copyObjectRequest) {
         final MultiMap headers = MultiMap.caseInsensitiveMultiMap();
 
-        if (StringUtils.trimToNull(copyObjectRequest.getAmzMetadataDirective()) != null) {
-            headers.add(Headers.X_AMZ_METADATA_DIRECTIVE, StringUtils.trim(copyObjectRequest.getAmzMetadataDirective()));
+        if (StringUtils.trimToNull(copyObjectRequest.getCacheControl()) != null) {
+            headers.add(Headers.CACHE_CONTROL, StringUtils.trim(copyObjectRequest.getCacheControl()));
+        }
+        if (StringUtils.trimToNull(copyObjectRequest.getContentDisposition()) != null) {
+            headers.add(Headers.CONTENT_DISPOSITION, StringUtils.trim(copyObjectRequest.getContentDisposition()));
+        }
+        if (StringUtils.trimToNull(copyObjectRequest.getContentEncoding()) != null) {
+            headers.add(Headers.CONTENT_ENCODING, StringUtils.trim(copyObjectRequest.getContentEncoding()));
+        }
+        if (StringUtils.trimToNull(copyObjectRequest.getContentType()) != null) {
+            headers.add(Headers.CONTENT_TYPE, StringUtils.trim(copyObjectRequest.getContentType()));
+        }
+        if (StringUtils.trimToNull(copyObjectRequest.getExpires()) != null) {
+            headers.add(Headers.EXPIRES, StringUtils.trim(copyObjectRequest.getExpires()));
+        }
+
+
+        for (Map.Entry<String, String> meta : copyObjectRequest.getAmzMeta()) {
+            headers.add(Headers.X_AMZ_META_PREFIX + meta.getKey(), StringUtils.trim(meta.getValue()));
+        }
+
+        if (copyObjectRequest.getAmzMetadataDirective() != null) {
+            headers.add(Headers.X_AMZ_METADATA_DIRECTIVE, copyObjectRequest.getAmzMetadataDirective().name());
         }
         if (StringUtils.trimToNull(copyObjectRequest.getAmzCopySourceIfMatch()) != null) {
             headers.add(Headers.X_AMZ_COPY_SOURCE_IF_MATCH, StringUtils.trim(copyObjectRequest.getAmzCopySourceIfMatch()));
@@ -741,11 +763,11 @@ public class S3Client {
         if (StringUtils.trimToNull(copyObjectRequest.getAmzCopySourceIfModifiedSince()) != null) {
             headers.add(Headers.X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, StringUtils.trim(copyObjectRequest.getAmzCopySourceIfModifiedSince()));
         }
-        if (StringUtils.trimToNull(copyObjectRequest.getAmzStorageClass()) != null) {
-            headers.add(Headers.X_AMZ_STORAGE_CLASS, StringUtils.trim(copyObjectRequest.getAmzStorageClass()));
+        if (copyObjectRequest.getAmzStorageClass() != null) {
+            headers.add(Headers.X_AMZ_STORAGE_CLASS, copyObjectRequest.getAmzStorageClass().name());
         }
-        if (StringUtils.trimToNull(copyObjectRequest.getAmzTaggingDirective()) != null) {
-            headers.add(Headers.X_AMZ_TAGGING_DIRECTIVE, StringUtils.trim(copyObjectRequest.getAmzTaggingDirective()));
+        if (copyObjectRequest.getAmzTaggingDirective() != null) {
+            headers.add(Headers.X_AMZ_TAGGING_DIRECTIVE, copyObjectRequest.getAmzTaggingDirective().name());
         }
         if (StringUtils.trimToNull(copyObjectRequest.getAmzWebsiteRedirectLocation()) != null) {
             headers.add(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION, StringUtils.trim(copyObjectRequest.getAmzWebsiteRedirectLocation()));
@@ -1113,7 +1135,7 @@ public class S3Client {
         getResponseHeaders.setAmzExpiration(Optional.ofNullable(headers.get(Headers.X_AMZ_EXPIRATION)).filter(StringUtils::isNotBlank).orElse(null));
         getResponseHeaders.setAmzReplicationStatus(Optional.ofNullable(headers.get(Headers.X_AMZ_REPLICATION_STATUS)).filter(StringUtils::isNotBlank).map(ReplicationStatus::valueOf).orElse(null));
         getResponseHeaders.setAmzRestore(Optional.ofNullable(headers.get(Headers.X_AMZ_RESTORE)).filter(StringUtils::isNotBlank).orElse(null));
-        getResponseHeaders.setAmzStorageClass(Optional.ofNullable(headers.get(Headers.X_AMZ_STORAGE_CLASS)).filter(StringUtils::isNotBlank).orElse(null));
+        getResponseHeaders.setAmzStorageClass(Optional.ofNullable(headers.get(Headers.X_AMZ_STORAGE_CLASS)).filter(StringUtils::isNotBlank).map(StorageClass::fromString).orElse(null));
         getResponseHeaders.setAmzTaggingCount(Optional.ofNullable(headers.get(Headers.X_AMZ_TAGGING_COUNT)).filter(StringUtils::isNotBlank).map(Integer::valueOf).orElse(null));
         getResponseHeaders.setAmzWebsiteRedirectLocation(Optional.ofNullable(headers.get(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION)).filter(StringUtils::isNotBlank).orElse(null));
 
@@ -1139,7 +1161,7 @@ public class S3Client {
         headResponseHeaders.setAmzMissingMeta(Optional.ofNullable(headers.get(Headers.X_AMZ_MISSING_META)).filter(StringUtils::isNotBlank).orElse(null));
         headResponseHeaders.setAmzReplicationStatus(Optional.ofNullable(headers.get(Headers.X_AMZ_REPLICATION_STATUS)).filter(StringUtils::isNotBlank).map(ReplicationStatus::valueOf).orElse(null));
         headResponseHeaders.setAmzRestore(Optional.ofNullable(headers.get(Headers.X_AMZ_RESTORE)).filter(StringUtils::isNotBlank).orElse(null));
-        headResponseHeaders.setAmzStorageClass(Optional.ofNullable(headers.get(Headers.X_AMZ_STORAGE_CLASS)).filter(StringUtils::isNotBlank).orElse(null));
+        headResponseHeaders.setAmzStorageClass(Optional.ofNullable(headers.get(Headers.X_AMZ_STORAGE_CLASS)).filter(StringUtils::isNotBlank).map(StorageClass::fromString).orElse(null));
 
         final MultiMap amzMeta = MultiMap.caseInsensitiveMultiMap();
         StreamSupport.stream(headers.spliterator(), true).filter(header -> header.getKey().toLowerCase().startsWith(Headers.X_AMZ_META_PREFIX)).forEach(header -> amzMeta.add(header.getKey().replaceFirst(Headers.X_AMZ_META_PREFIX, ""), header.getValue()));

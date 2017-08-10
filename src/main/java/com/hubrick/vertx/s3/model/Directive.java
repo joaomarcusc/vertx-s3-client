@@ -20,22 +20,20 @@ import java.util.Map;
 
 /**
  * @author Emir Dizdarevic
- * @since 3.0.0
+ * @since 3.1.0
  */
-public enum StorageClass {
-    STANDARD,
-    STANDARD_IA,
-    REDUCED_REDUNDANCY;
+public enum Directive {
+    COPY,
+    REPLACE;
 
-
-    private static Map<String, StorageClass> REVERSE_LOOKUP = new HashMap<>();
+    private static Map<String, Directive> REVERSE_LOOKUP = new HashMap<>();
     static {
-        for(StorageClass storageClass : values()) {
-            REVERSE_LOOKUP.put(storageClass.name(), storageClass);
+        for(Directive directive : values()) {
+            REVERSE_LOOKUP.put(directive.name(), directive);
         }
     }
 
-    public static StorageClass fromString(String value) {
+    public static Directive fromString(String value) {
         return REVERSE_LOOKUP.get(value);
     }
 
