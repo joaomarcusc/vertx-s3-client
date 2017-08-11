@@ -18,42 +18,44 @@ package com.hubrick.vertx.s3.client;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.hubrick.vertx.s3.exception.HttpErrorException;
-import com.hubrick.vertx.s3.model.HeaderOnlyResponse;
-import com.hubrick.vertx.s3.model.Part;
-import com.hubrick.vertx.s3.model.Response;
-import com.hubrick.vertx.s3.model.StorageClass;
-import com.hubrick.vertx.s3.model.request.AbortMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.CommonPrefixes;
-import com.hubrick.vertx.s3.model.header.CommonResponseHeaders;
-import com.hubrick.vertx.s3.model.request.CompleteMultipartUploadRequest;
-import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
-import com.hubrick.vertx.s3.model.header.CompleteMultipartUploadResponseHeaders;
 import com.hubrick.vertx.s3.model.Connection;
 import com.hubrick.vertx.s3.model.Contents;
-import com.hubrick.vertx.s3.model.request.ContinueMultipartUploadRequest;
-import com.hubrick.vertx.s3.model.header.ContinueMultipartUploadResponseHeaders;
-import com.hubrick.vertx.s3.model.request.CopyObjectRequest;
-import com.hubrick.vertx.s3.model.response.CopyObjectResponse;
-import com.hubrick.vertx.s3.model.header.CopyObjectResponseHeaders;
-import com.hubrick.vertx.s3.model.request.DeleteObjectRequest;
-import com.hubrick.vertx.s3.model.response.ErrorResponse;
-import com.hubrick.vertx.s3.model.request.GetBucketRequest;
-import com.hubrick.vertx.s3.model.response.GetBucketRespone;
-import com.hubrick.vertx.s3.model.request.GetObjectRequest;
-import com.hubrick.vertx.s3.model.header.GetObjectResponseHeaders;
-import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
-import com.hubrick.vertx.s3.model.header.HeadObjectResponseHeaders;
-import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
-import com.hubrick.vertx.s3.model.response.InitMultipartUploadResponse;
-import com.hubrick.vertx.s3.model.header.InitMultipartUploadResponseHeaders;
-import com.hubrick.vertx.s3.model.response.MultipartUploadWriteStream;
+import com.hubrick.vertx.s3.model.HeaderOnlyResponse;
 import com.hubrick.vertx.s3.model.Owner;
-import com.hubrick.vertx.s3.model.request.PutObjectRequest;
-import com.hubrick.vertx.s3.model.header.PutObjectResponseHeaders;
+import com.hubrick.vertx.s3.model.Part;
 import com.hubrick.vertx.s3.model.ReplicationStatus;
+import com.hubrick.vertx.s3.model.Response;
 import com.hubrick.vertx.s3.model.ResponseWithBody;
-import com.hubrick.vertx.s3.model.header.ServerSideEncryptionResponseHeaders;
+import com.hubrick.vertx.s3.model.StorageClass;
 import com.hubrick.vertx.s3.model.filter.NamespaceFilter;
+import com.hubrick.vertx.s3.model.header.CommonResponseHeaders;
+import com.hubrick.vertx.s3.model.header.CompleteMultipartUploadResponseHeaders;
+import com.hubrick.vertx.s3.model.header.ContinueMultipartUploadResponseHeaders;
+import com.hubrick.vertx.s3.model.header.CopyObjectResponseHeaders;
+import com.hubrick.vertx.s3.model.header.GetObjectResponseHeaders;
+import com.hubrick.vertx.s3.model.header.HeadObjectResponseHeaders;
+import com.hubrick.vertx.s3.model.header.InitMultipartUploadResponseHeaders;
+import com.hubrick.vertx.s3.model.header.PutObjectResponseHeaders;
+import com.hubrick.vertx.s3.model.header.ServerSideEncryptionResponseHeaders;
+import com.hubrick.vertx.s3.model.request.AbortMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.AdaptiveUploadRequest;
+import com.hubrick.vertx.s3.model.request.CompleteMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.ContinueMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.CopyObjectRequest;
+import com.hubrick.vertx.s3.model.request.DeleteObjectRequest;
+import com.hubrick.vertx.s3.model.request.GetBucketRequest;
+import com.hubrick.vertx.s3.model.request.GetObjectRequest;
+import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
+import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.PutObjectRequest;
+import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
+import com.hubrick.vertx.s3.model.response.CopyObjectResponse;
+import com.hubrick.vertx.s3.model.response.ErrorResponse;
+import com.hubrick.vertx.s3.model.response.GetBucketRespone;
+import com.hubrick.vertx.s3.model.response.InitMultipartUploadResponse;
+import com.hubrick.vertx.s3.model.response.MultipartUploadWriteStream;
+import com.hubrick.vertx.s3.util.ChunkedBufferReadStream;
 import com.hubrick.vertx.s3.util.UrlEncodingUtils;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -62,6 +64,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -93,10 +96,12 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class S3Client {
 
     private static final Logger log = LoggerFactory.getLogger(S3Client.class);
+    private static final int FIVE_MB_IN_BYTES = 5242880;
     private static final String DEFAULT_REGION = "us-east-1";
     private static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
     private static final String ENDPOINT_PATTERN = "s3-{0}.amazonaws.com";
 
+    private final Vertx vertx;
     private final Marshaller jaxbMarshaller;
     private final Unmarshaller jaxbUnmarshaller;
     private final Long globalTimeout;
@@ -126,6 +131,7 @@ public class S3Client {
         this.jaxbMarshaller = createJaxbMarshaller();
         this.jaxbUnmarshaller = createJaxbUnmarshaller();
 
+        this.vertx = vertx;
         this.clock = clock;
         this.awsServiceName = s3ClientOptions.getAwsServiceName();
         this.awsRegion = s3ClientOptions.getAwsRegion();
@@ -232,6 +238,111 @@ public class S3Client {
         );
         request.exceptionHandler(exceptionHandler);
         request.end(putObjectRequest.getData());
+    }
+
+    /**
+     * Adaptively upload a file to S3 and take away the burden to choose between direct or multipart upload.
+     * Since the minimum size of the multipart part has to be 5MB this method handles the upload automatically.
+     * It either chooses between the direct upload if the stream contains less then 5MB or the multipart upload
+     * if the stream is bigger then 5MB.
+     *
+     * @param bucket                The bucket
+     * @param key                   The key of the final file
+     * @param adaptiveUploadRequest The request
+     * @param handler               Success handler
+     * @param exceptionHandler      Exception handler
+     */
+    public void adaptiveUpload(String bucket,
+                               String key,
+                               AdaptiveUploadRequest adaptiveUploadRequest,
+                               Handler<Response<CommonResponseHeaders, Void>> handler,
+                               Handler<Throwable> exceptionHandler) {
+        checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(adaptiveUploadRequest, "adaptiveUploadRequest must not be null");
+        checkNotNull(handler, "handler must not be null");
+        checkNotNull(exceptionHandler, "exceptionHandler must not be null");
+
+        final ChunkedBufferReadStream chunkedBufferReadStream = new ChunkedBufferReadStream(vertx, adaptiveUploadRequest.getReadStream(), FIVE_MB_IN_BYTES);
+        chunkedBufferReadStream.exceptionHandler(throwable -> exceptionHandler.handle(throwable));
+        chunkedBufferReadStream.setChunkHandler(chunk -> {
+            if(chunkedBufferReadStream.numberOfChunks() == 0) {
+                if (chunk.length() < FIVE_MB_IN_BYTES) {
+                    final Buffer buffer = Buffer.buffer();
+                    chunkedBufferReadStream.handler(buffer::appendBuffer);
+                    chunkedBufferReadStream.endHandler(aVoid -> {
+                        putObject(bucket, key, mapAdaptiveUploadRequestToPutObjectRequest(buffer, adaptiveUploadRequest), event -> handler.handle(new HeaderOnlyResponse(event.getHeader())), exceptionHandler);
+                    });
+                    chunkedBufferReadStream.resume();
+                } else {
+                    chunkedBufferReadStream.pause();
+                    initMultipartUpload(bucket, key, mapAdaptiveUploadRequestToInitMultipartUploadRequest(adaptiveUploadRequest),
+                            event -> {
+                                event.getData().exceptionHandler(throwable -> exceptionHandler.handle(throwable));
+                                Pump.pump(chunkedBufferReadStream, event.getData()).start();
+                                chunkedBufferReadStream.endHandler(aVoid -> event.getData().end(endResponse -> handler.handle(new HeaderOnlyResponse(event.getHeader()))));
+                                chunkedBufferReadStream.resume();
+                            },
+                            exceptionHandler
+                    );
+                }
+            }
+        });
+        chunkedBufferReadStream.resume();
+    }
+
+    private PutObjectRequest mapAdaptiveUploadRequestToPutObjectRequest(Buffer buffer, AdaptiveUploadRequest autoUploadRequest) {
+        final PutObjectRequest putObjectRequest = new PutObjectRequest(buffer);
+
+        putObjectRequest.withCacheControl(autoUploadRequest.getCacheControl());
+        putObjectRequest.withContentDisposition(autoUploadRequest.getContentDisposition());
+        putObjectRequest.withContentEncoding(autoUploadRequest.getContentEncoding());
+        putObjectRequest.withContentMD5(autoUploadRequest.getContentMD5());
+        putObjectRequest.withContentType(autoUploadRequest.getContentType());
+        putObjectRequest.withExpires(autoUploadRequest.getExpires());
+
+        for (Map.Entry<String, String> meta : autoUploadRequest.getAmzMeta()) {
+            putObjectRequest.withAmzMeta(meta.getKey(), StringUtils.trim(meta.getValue()));
+        }
+
+        putObjectRequest.withAmzStorageClass(autoUploadRequest.getAmzStorageClass());
+        putObjectRequest.withAmzTagging(autoUploadRequest.getAmzTagging());
+        putObjectRequest.withAmzWebsiteRedirectLocation(autoUploadRequest.getAmzWebsiteRedirectLocation());
+        putObjectRequest.withAmzAcl(autoUploadRequest.getAmzAcl());
+        putObjectRequest.withAmzGrantRead(autoUploadRequest.getAmzGrantRead());
+        putObjectRequest.withAmzGrantWrite(autoUploadRequest.getAmzGrantWrite());
+        putObjectRequest.withAmzGrantWriteAcp(autoUploadRequest.getAmzGrantWriteAcp());
+        putObjectRequest.withAmzGrantRead(autoUploadRequest.getAmzGrantRead());
+        putObjectRequest.withAmzGrantReadAcp(autoUploadRequest.getAmzGrantReadAcp());
+        putObjectRequest.withAmzGrantFullControl(autoUploadRequest.getAmzGrantFullControl());
+
+        return putObjectRequest;
+    }
+
+    private InitMultipartUploadRequest mapAdaptiveUploadRequestToInitMultipartUploadRequest(AdaptiveUploadRequest autoUploadRequest) {
+        final InitMultipartUploadRequest initMultipartUploadRequest = new InitMultipartUploadRequest();
+
+        initMultipartUploadRequest.withCacheControl(autoUploadRequest.getCacheControl());
+        initMultipartUploadRequest.withContentDisposition(autoUploadRequest.getContentDisposition());
+        initMultipartUploadRequest.withContentEncoding(autoUploadRequest.getContentEncoding());
+        initMultipartUploadRequest.withContentType(autoUploadRequest.getContentType());
+        initMultipartUploadRequest.withExpires(autoUploadRequest.getExpires());
+
+        for (Map.Entry<String, String> meta : autoUploadRequest.getAmzMeta()) {
+            initMultipartUploadRequest.withAmzMeta(meta.getKey(), StringUtils.trim(meta.getValue()));
+        }
+
+        initMultipartUploadRequest.withAmzStorageClass(autoUploadRequest.getAmzStorageClass());
+        initMultipartUploadRequest.withAmzWebsiteRedirectLocation(autoUploadRequest.getAmzWebsiteRedirectLocation());
+        initMultipartUploadRequest.withAmzAcl(autoUploadRequest.getAmzAcl());
+        initMultipartUploadRequest.withAmzGrantRead(autoUploadRequest.getAmzGrantRead());
+        initMultipartUploadRequest.withAmzGrantWrite(autoUploadRequest.getAmzGrantWrite());
+        initMultipartUploadRequest.withAmzGrantWriteAcp(autoUploadRequest.getAmzGrantWriteAcp());
+        initMultipartUploadRequest.withAmzGrantRead(autoUploadRequest.getAmzGrantRead());
+        initMultipartUploadRequest.withAmzGrantReadAcp(autoUploadRequest.getAmzGrantReadAcp());
+        initMultipartUploadRequest.withAmzGrantFullControl(autoUploadRequest.getAmzGrantFullControl());
+
+        return initMultipartUploadRequest;
     }
 
     /**
@@ -1281,6 +1392,7 @@ public class S3Client {
 
     private interface ResponseHeaderMapper<T extends CommonResponseHeaders> {
         T map(MultiMap headers);
+
     }
 
     private JAXBContext createJAXBContext() {
