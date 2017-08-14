@@ -14,7 +14,7 @@ A fully functional Vert.x client for S3
 <dependency>
     <groupId>com.hubrick.vertx</groupId>
     <artifactId>vertx-s3-client</artifactId>
-    <version>3.0.0</version>
+    <version>3.1.0</version>
 </dependency>
 ```
 
@@ -107,6 +107,33 @@ A fully functional Vert.x client for S3
                     final Pump pump = Pump.pump(asyncFile, response.getData());
                     pump.start();
                     asyncFile.resume();
+                },
+                Throwable::printStackTrace
+            );
+        });
+```
+
+### Adaptive upload
+The client willa automaticaly detect the size of the stream. If it's lower then 5MB it will directly upload the file to S3, otherwise it will stream the data via the mutlipart upload.
+```java
+        final S3ClientOptions clientOptions = new S3ClientOptions()
+                .setAwsRegion("eu-central-1")
+                .setAwsServiceName("s3")
+                .setAwsAccessKey("AKIDEXAMPLE")
+                .setAwsSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+                //.setSignPayload(true);
+
+        final S3Client s3Client = new S3Client(vertx, clientOptions);
+
+        // Stream any file from disk to S3
+        vertx.fileSystem().open(filePath, openOptions, asyncFile -> {
+        
+            s3Client.adaptiveUpload(
+                "bucket",
+                "someid",
+                new AdaptiveUploadRequest().withContentType("video/mp4"),
+                response -> {
+                    // Response headers
                 },
                 Throwable::printStackTrace
             );
