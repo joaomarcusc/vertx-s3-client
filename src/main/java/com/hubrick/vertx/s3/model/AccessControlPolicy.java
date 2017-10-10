@@ -15,7 +15,6 @@
  */
 package com.hubrick.vertx.s3.model;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -23,40 +22,43 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 3.2.0
  */
-@XmlRootElement(name = "Owner")
+@XmlRootElement(name = "AccessControlPolicy")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Owner {
+public class AccessControlPolicy {
 
-    @XmlElement(name = "ID", required = true)
-    private String id;
+    @XmlElement(name = "Owner", required = true)
+    private Owner owner;
 
-    @XmlElement(name = "DisplayName", required = true)
-    private String displayName;
+    @XmlElementWrapper(name = "AccessControlList")
+    @XmlElement(name = "Grant", required = true)
+    private List<Grant> grants;
 
-    protected Owner() {}
+    protected AccessControlPolicy() {}
 
-    public Owner(String id, String displayName) {
-        checkNotNull(StringUtils.trimToNull(id), "id must not be null");
-        checkNotNull(StringUtils.trimToNull(displayName), "displayName must not be null");
+    public AccessControlPolicy(Owner owner, List<Grant> grants) {
+        checkNotNull(owner, "owner must not be null");
+        checkNotNull(grants, "grants must not be null");
 
-        this.id = id;
-        this.displayName = displayName;
+        this.owner = owner;
+        this.grants = grants;
     }
 
-    public String getId() {
-        return id;
+    public Owner getOwner() {
+        return owner;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public List<Grant> getGrants() {
+        return grants;
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
+import com.hubrick.vertx.s3.model.CannedAcl;
 import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -37,7 +38,7 @@ public class InitMultipartUploadRequest {
     private StorageClass amzStorageClass;
     private String amzWebsiteRedirectLocation;
 
-    private String amzAcl;
+    private CannedAcl amzAcl;
     private String amzGrantRead;
     private String amzGrantWrite;
     private String amzGrantReadAcp;
@@ -89,7 +90,7 @@ public class InitMultipartUploadRequest {
         return this;
     }
 
-    public InitMultipartUploadRequest withAmzAcl(String amzAcl) {
+    public InitMultipartUploadRequest withAmzAcl(CannedAcl amzAcl) {
         this.amzAcl = amzAcl;
         return this;
     }
@@ -151,7 +152,7 @@ public class InitMultipartUploadRequest {
         return amzWebsiteRedirectLocation;
     }
 
-    public String getAmzAcl() {
+    public CannedAcl getAmzAcl() {
         return amzAcl;
     }
 

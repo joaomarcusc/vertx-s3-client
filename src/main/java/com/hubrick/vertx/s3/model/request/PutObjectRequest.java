@@ -15,6 +15,7 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
+import com.hubrick.vertx.s3.model.CannedAcl;
 import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -44,7 +45,7 @@ public class PutObjectRequest {
     private String amzTagging;
     private String amzWebsiteRedirectLocation;
 
-    private String amzAcl;
+    private CannedAcl amzAcl;
     private String amzGrantRead;
     private String amzGrantWrite;
     private String amzGrantReadAcp;
@@ -112,7 +113,7 @@ public class PutObjectRequest {
         return this;
     }
 
-    public PutObjectRequest withAmzAcl(String amzAcl) {
+    public PutObjectRequest withAmzAcl(CannedAcl amzAcl) {
         this.amzAcl = amzAcl;
         return this;
     }
@@ -186,7 +187,7 @@ public class PutObjectRequest {
         return amzWebsiteRedirectLocation;
     }
 
-    public String getAmzAcl() {
+    public CannedAcl getAmzAcl() {
         return amzAcl;
     }
 

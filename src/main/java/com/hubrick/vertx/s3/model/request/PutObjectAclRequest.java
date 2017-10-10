@@ -13,50 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hubrick.vertx.s3.model;
+package com.hubrick.vertx.s3.model.request;
 
-import org.apache.commons.lang3.StringUtils;
+import com.hubrick.vertx.s3.model.AccessControlPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 3.2.0
  */
-@XmlRootElement(name = "Owner")
-@XmlAccessorType(XmlAccessType.FIELD)
-public class Owner {
+public class PutObjectAclRequest {
 
-    @XmlElement(name = "ID", required = true)
-    private String id;
+    private PutObjectHeaderAclRequest putObjectHeaderAclRequest;
+    private AccessControlPolicy accessControlPolicy;
 
-    @XmlElement(name = "DisplayName", required = true)
-    private String displayName;
-
-    protected Owner() {}
-
-    public Owner(String id, String displayName) {
-        checkNotNull(StringUtils.trimToNull(id), "id must not be null");
-        checkNotNull(StringUtils.trimToNull(displayName), "displayName must not be null");
-
-        this.id = id;
-        this.displayName = displayName;
+    public PutObjectAclRequest(PutObjectHeaderAclRequest putObjectHeaderAclRequest) {
+        this.putObjectHeaderAclRequest = putObjectHeaderAclRequest;
     }
 
-    public String getId() {
-        return id;
+    public PutObjectAclRequest(AccessControlPolicy accessControlPolicy) {
+        this.accessControlPolicy = accessControlPolicy;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public PutObjectHeaderAclRequest getPutObjectHeaderAclRequest() {
+        return putObjectHeaderAclRequest;
+    }
+
+    public AccessControlPolicy getAccessControlPolicy() {
+        return accessControlPolicy;
     }
 
     @Override
