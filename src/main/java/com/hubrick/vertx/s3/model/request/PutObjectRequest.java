@@ -15,7 +15,6 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
-import com.hubrick.vertx.s3.model.CannedAcl;
 import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -29,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Emir Dizdarevic
  * @since 2.0.0
  */
-public class PutObjectRequest {
+public class PutObjectRequest extends AclHeadersRequest<PutObjectRequest> {
 
     private final Buffer data;
 
@@ -44,13 +43,6 @@ public class PutObjectRequest {
     private StorageClass amzStorageClass;
     private String amzTagging;
     private String amzWebsiteRedirectLocation;
-
-    private CannedAcl amzAcl;
-    private String amzGrantRead;
-    private String amzGrantWrite;
-    private String amzGrantReadAcp;
-    private String amzGrantWriteAcp;
-    private String amzGrantFullControl;
 
     public PutObjectRequest(Buffer data) {
         checkNotNull(data, "data must not be null");
@@ -113,36 +105,6 @@ public class PutObjectRequest {
         return this;
     }
 
-    public PutObjectRequest withAmzAcl(CannedAcl amzAcl) {
-        this.amzAcl = amzAcl;
-        return this;
-    }
-
-    public PutObjectRequest withAmzGrantRead(String amzGrantRead) {
-        this.amzGrantRead = amzGrantRead;
-        return this;
-    }
-
-    public PutObjectRequest withAmzGrantWrite(String amzGrantWrite) {
-        this.amzGrantWrite = amzGrantWrite;
-        return this;
-    }
-
-    public PutObjectRequest withAmzGrantReadAcp(String amzGrantReadAcp) {
-        this.amzGrantReadAcp = amzGrantReadAcp;
-        return this;
-    }
-
-    public PutObjectRequest withAmzGrantWriteAcp(String amzGrantWriteAcp) {
-        this.amzGrantWriteAcp = amzGrantWriteAcp;
-        return this;
-    }
-
-    public PutObjectRequest withAmzGrantFullControl(String amzGrantFullControl) {
-        this.amzGrantFullControl = amzGrantFullControl;
-        return this;
-    }
-
     public Buffer getData() {
         return data;
     }
@@ -185,30 +147,6 @@ public class PutObjectRequest {
 
     public String getAmzWebsiteRedirectLocation() {
         return amzWebsiteRedirectLocation;
-    }
-
-    public CannedAcl getAmzAcl() {
-        return amzAcl;
-    }
-
-    public String getAmzGrantRead() {
-        return amzGrantRead;
-    }
-
-    public String getAmzGrantWrite() {
-        return amzGrantWrite;
-    }
-
-    public String getAmzGrantReadAcp() {
-        return amzGrantReadAcp;
-    }
-
-    public String getAmzGrantWriteAcp() {
-        return amzGrantWriteAcp;
-    }
-
-    public String getAmzGrantFullControl() {
-        return amzGrantFullControl;
     }
 
     @Override

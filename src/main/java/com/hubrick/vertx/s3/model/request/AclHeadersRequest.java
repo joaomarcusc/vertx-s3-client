@@ -22,9 +22,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 2.2.0
  */
-public class PutObjectHeaderAclRequest {
+public class AclHeadersRequest<T extends AclHeadersRequest> {
 
     private CannedAcl amzAcl;
     private String amzGrantRead;
@@ -33,34 +33,34 @@ public class PutObjectHeaderAclRequest {
     private String amzGrantWriteAcp;
     private String amzGrantFullControl;
 
-    public PutObjectHeaderAclRequest withAmzAcl(CannedAcl amzAcl) {
+    public T withAmzAcl(CannedAcl amzAcl) {
         this.amzAcl = amzAcl;
-        return this;
+        return (T) this;
     }
 
-    public PutObjectHeaderAclRequest withAmzGrantRead(String amzGrantRead) {
+    public T withAmzGrantRead(String amzGrantRead) {
         this.amzGrantRead = amzGrantRead;
-        return this;
+        return (T) this;
     }
 
-    public PutObjectHeaderAclRequest withAmzGrantWrite(String amzGrantWrite) {
+    public T withAmzGrantWrite(String amzGrantWrite) {
         this.amzGrantWrite = amzGrantWrite;
-        return this;
+        return (T) this;
     }
 
-    public PutObjectHeaderAclRequest withAmzGrantReadAcp(String amzGrantReadAcp) {
+    public T withAmzGrantReadAcp(String amzGrantReadAcp) {
         this.amzGrantReadAcp = amzGrantReadAcp;
-        return this;
+        return (T) this;
     }
 
-    public PutObjectHeaderAclRequest withAmzGrantWriteAcp(String amzGrantWriteAcp) {
+    public T withAmzGrantWriteAcp(String amzGrantWriteAcp) {
         this.amzGrantWriteAcp = amzGrantWriteAcp;
-        return this;
+        return (T) this;
     }
 
-    public PutObjectHeaderAclRequest withAmzGrantFullControl(String amzGrantFullControl) {
+    public T withAmzGrantFullControl(String amzGrantFullControl) {
         this.amzGrantFullControl = amzGrantFullControl;
-        return this;
+        return (T) this;
     }
 
     public CannedAcl getAmzAcl() {

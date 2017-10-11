@@ -26,19 +26,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class PutObjectAclRequest {
 
-    private PutObjectHeaderAclRequest putObjectHeaderAclRequest;
+    private AclHeadersRequest aclHeadersRequest;
     private AccessControlPolicy accessControlPolicy;
 
-    public PutObjectAclRequest(PutObjectHeaderAclRequest putObjectHeaderAclRequest) {
-        this.putObjectHeaderAclRequest = putObjectHeaderAclRequest;
+    public PutObjectAclRequest(AclHeadersRequest aclHeadersRequest) {
+        this.aclHeadersRequest = aclHeadersRequest;
     }
 
     public PutObjectAclRequest(AccessControlPolicy accessControlPolicy) {
         this.accessControlPolicy = accessControlPolicy;
     }
 
-    public PutObjectHeaderAclRequest getPutObjectHeaderAclRequest() {
-        return putObjectHeaderAclRequest;
+    public AclHeadersRequest getAclHeadersRequest() {
+        return aclHeadersRequest;
     }
 
     public AccessControlPolicy getAccessControlPolicy() {

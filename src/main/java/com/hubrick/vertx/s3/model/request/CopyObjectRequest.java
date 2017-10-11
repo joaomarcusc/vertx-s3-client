@@ -26,7 +26,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @author Emir Dizdarevic
  * @since 2.0.0
  */
-public class CopyObjectRequest {
+public class CopyObjectRequest extends AclHeadersRequest<CopyObjectRequest> {
 
     private String cacheControl;
     private String contentDisposition;

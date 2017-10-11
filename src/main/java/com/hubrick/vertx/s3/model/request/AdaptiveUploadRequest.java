@@ -15,7 +15,6 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
-import com.hubrick.vertx.s3.model.CannedAcl;
 import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -30,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Emir Dizdarevic
  * @since 3.1.0
  */
-public class AdaptiveUploadRequest {
+public class AdaptiveUploadRequest extends AclHeadersRequest<AdaptiveUploadRequest> {
 
     private final ReadStream<Buffer> readStream;
 
@@ -45,13 +44,6 @@ public class AdaptiveUploadRequest {
     private StorageClass amzStorageClass;
     private String amzTagging;
     private String amzWebsiteRedirectLocation;
-
-    private CannedAcl amzAcl;
-    private String amzGrantRead;
-    private String amzGrantWrite;
-    private String amzGrantReadAcp;
-    private String amzGrantWriteAcp;
-    private String amzGrantFullControl;
 
     public AdaptiveUploadRequest(ReadStream<Buffer> readStream) {
         checkNotNull(readStream, "readStream must not be null");
@@ -115,36 +107,6 @@ public class AdaptiveUploadRequest {
         return this;
     }
 
-    public AdaptiveUploadRequest withAmzAcl(CannedAcl amzAcl) {
-        this.amzAcl = amzAcl;
-        return this;
-    }
-
-    public AdaptiveUploadRequest withAmzGrantRead(String amzGrantRead) {
-        this.amzGrantRead = amzGrantRead;
-        return this;
-    }
-
-    public AdaptiveUploadRequest withAmzGrantWrite(String amzGrantWrite) {
-        this.amzGrantWrite = amzGrantWrite;
-        return this;
-    }
-
-    public AdaptiveUploadRequest withAmzGrantReadAcp(String amzGrantReadAcp) {
-        this.amzGrantReadAcp = amzGrantReadAcp;
-        return this;
-    }
-
-    public AdaptiveUploadRequest withAmzGrantWriteAcp(String amzGrantWriteAcp) {
-        this.amzGrantWriteAcp = amzGrantWriteAcp;
-        return this;
-    }
-
-    public AdaptiveUploadRequest withAmzGrantFullControl(String amzGrantFullControl) {
-        this.amzGrantFullControl = amzGrantFullControl;
-        return this;
-    }
-
     public ReadStream<Buffer> getReadStream() {
         return readStream;
     }
@@ -187,30 +149,6 @@ public class AdaptiveUploadRequest {
 
     public String getAmzWebsiteRedirectLocation() {
         return amzWebsiteRedirectLocation;
-    }
-
-    public CannedAcl getAmzAcl() {
-        return amzAcl;
-    }
-
-    public String getAmzGrantRead() {
-        return amzGrantRead;
-    }
-
-    public String getAmzGrantWrite() {
-        return amzGrantWrite;
-    }
-
-    public String getAmzGrantReadAcp() {
-        return amzGrantReadAcp;
-    }
-
-    public String getAmzGrantWriteAcp() {
-        return amzGrantWriteAcp;
-    }
-
-    public String getAmzGrantFullControl() {
-        return amzGrantFullControl;
     }
 
     @Override

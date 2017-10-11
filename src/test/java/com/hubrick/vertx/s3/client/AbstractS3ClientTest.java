@@ -30,6 +30,7 @@ import com.hubrick.vertx.s3.model.header.CompleteMultipartUploadResponseHeaders;
 import com.hubrick.vertx.s3.model.header.ContinueMultipartUploadResponseHeaders;
 import com.hubrick.vertx.s3.model.header.InitMultipartUploadResponseHeaders;
 import com.hubrick.vertx.s3.model.request.AbortMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.AclHeadersRequest;
 import com.hubrick.vertx.s3.model.request.CompleteMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.request.ContinueMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.request.CopyObjectRequest;
@@ -39,7 +40,6 @@ import com.hubrick.vertx.s3.model.request.GetObjectRequest;
 import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
 import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.request.PutObjectAclRequest;
-import com.hubrick.vertx.s3.model.request.PutObjectHeaderAclRequest;
 import com.hubrick.vertx.s3.model.request.PutObjectRequest;
 import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
 import com.hubrick.vertx.s3.model.response.MultipartUploadWriteStream;
@@ -258,7 +258,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     void verifyPutObjectAclWithHeaders(final TestContext testContext) {
 
         final Async async = testContext.async();
-        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(new PutObjectHeaderAclRequest().withAmzAcl(CannedAcl.PRIVATE)),
+        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(new AclHeadersRequest().withAmzAcl(CannedAcl.PRIVATE)),
                 (putResponseHeaders) -> {
                     assertThat(testContext, putResponseHeaders, notNullValue());
                     async.complete();
@@ -281,7 +281,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     void verifyPutObjectAclWithHeadersErrorResponse(final TestContext testContext) {
 
         final Async async = testContext.async();
-        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(new PutObjectHeaderAclRequest().withAmzAcl(CannedAcl.PRIVATE)),
+        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(new AclHeadersRequest().withAmzAcl(CannedAcl.PRIVATE)),
                 (result) -> {
                     testContext.fail("Exceptions should be thrown");
                 },

@@ -42,6 +42,7 @@ import com.hubrick.vertx.s3.model.header.InitMultipartUploadResponseHeaders;
 import com.hubrick.vertx.s3.model.header.PutObjectResponseHeaders;
 import com.hubrick.vertx.s3.model.header.ServerSideEncryptionResponseHeaders;
 import com.hubrick.vertx.s3.model.request.AbortMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.AclHeadersRequest;
 import com.hubrick.vertx.s3.model.request.AdaptiveUploadRequest;
 import com.hubrick.vertx.s3.model.request.CompleteMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.request.ContinueMultipartUploadRequest;
@@ -52,7 +53,6 @@ import com.hubrick.vertx.s3.model.request.GetObjectRequest;
 import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
 import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
 import com.hubrick.vertx.s3.model.request.PutObjectAclRequest;
-import com.hubrick.vertx.s3.model.request.PutObjectHeaderAclRequest;
 import com.hubrick.vertx.s3.model.request.PutObjectRequest;
 import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
 import com.hubrick.vertx.s3.model.response.CopyObjectResponse;
@@ -259,7 +259,7 @@ public class S3Client {
         final S3ClientRequest request = createPutAclRequest(
                 bucket,
                 key,
-                Optional.ofNullable(putObjectAclRequest.getPutObjectHeaderAclRequest()),
+                Optional.ofNullable(putObjectAclRequest.getAclHeadersRequest()),
                 new HeadersResponseHandler("putObjectAcl", jaxbUnmarshaller, new PutResponseHeadersMapper(), handler, exceptionHandler)
         );
         request.exceptionHandler(exceptionHandler);
@@ -615,12 +615,13 @@ public class S3Client {
                 .putHeader(Headers.HOST, hostname);
 
         s3ClientRequest.headers().addAll(populatePutObjectHeaders(putObjectRequest));
+        s3ClientRequest.headers().addAll(populateAclHeadersRequest(putObjectRequest));
         return s3ClientRequest;
     }
 
     private S3ClientRequest createPutAclRequest(String bucket,
                                                 String key,
-                                                Optional<PutObjectHeaderAclRequest> putObjectHeaderAclRequest,
+                                                Optional<AclHeadersRequest> aclHeadersRequest,
                                                 Handler<HttpClientResponse> handler) {
         HttpClientRequest httpRequest = client.put("/" + bucket + "/" + key + "?acl", handler);
         final S3ClientRequest s3ClientRequest = new S3ClientRequest(
@@ -636,7 +637,7 @@ public class S3Client {
                 .setTimeout(globalTimeout)
                 .putHeader(Headers.HOST, hostname);
 
-        putObjectHeaderAclRequest.ifPresent(e -> s3ClientRequest.headers().addAll(populatePutAclObjectHeaders(e)));
+        aclHeadersRequest.ifPresent(e -> s3ClientRequest.headers().addAll(populateAclHeadersRequest(e)));
         return s3ClientRequest;
     }
 
@@ -675,48 +676,30 @@ public class S3Client {
         if (StringUtils.trimToNull(putObjectRequest.getAmzWebsiteRedirectLocation()) != null) {
             headers.add(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION, StringUtils.trim(putObjectRequest.getAmzWebsiteRedirectLocation()));
         }
-        if (putObjectRequest.getAmzAcl() != null) {
-            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(putObjectRequest.getAmzAcl().getValue()));
-        }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzGrantRead()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(putObjectRequest.getAmzGrantRead()));
-        }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzGrantWrite()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_WRITE, StringUtils.trim(putObjectRequest.getAmzGrantWrite()));
-        }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzGrantReadAcp()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_READ_ACP, StringUtils.trim(putObjectRequest.getAmzGrantReadAcp()));
-        }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzGrantWriteAcp()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_WRITE_ACP, StringUtils.trim(putObjectRequest.getAmzGrantWriteAcp()));
-        }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzGrantFullControl()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_FULL_CONTROL, StringUtils.trim(putObjectRequest.getAmzGrantFullControl()));
-        }
 
         return headers;
     }
 
-    private MultiMap populatePutAclObjectHeaders(PutObjectHeaderAclRequest putObjectHeaderAclRequest) {
+    private MultiMap populateAclHeadersRequest(AclHeadersRequest aclHeadersRequest) {
         final MultiMap headers = MultiMap.caseInsensitiveMultiMap();
 
-        if (putObjectHeaderAclRequest.getAmzAcl() != null) {
-            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(putObjectHeaderAclRequest.getAmzAcl().getValue()));
+        if (aclHeadersRequest.getAmzAcl() != null) {
+            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(aclHeadersRequest.getAmzAcl().getValue()));
         }
-        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantRead()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantRead()));
+        if (StringUtils.trimToNull(aclHeadersRequest.getAmzGrantRead()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(aclHeadersRequest.getAmzGrantRead()));
         }
-        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantWrite()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_WRITE, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantWrite()));
+        if (StringUtils.trimToNull(aclHeadersRequest.getAmzGrantWrite()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_WRITE, StringUtils.trim(aclHeadersRequest.getAmzGrantWrite()));
         }
-        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantReadAcp()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_READ_ACP, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantReadAcp()));
+        if (StringUtils.trimToNull(aclHeadersRequest.getAmzGrantReadAcp()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_READ_ACP, StringUtils.trim(aclHeadersRequest.getAmzGrantReadAcp()));
         }
-        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantWriteAcp()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_WRITE_ACP, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantWriteAcp()));
+        if (StringUtils.trimToNull(aclHeadersRequest.getAmzGrantWriteAcp()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_WRITE_ACP, StringUtils.trim(aclHeadersRequest.getAmzGrantWriteAcp()));
         }
-        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantFullControl()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_FULL_CONTROL, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantFullControl()));
+        if (StringUtils.trimToNull(aclHeadersRequest.getAmzGrantFullControl()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_FULL_CONTROL, StringUtils.trim(aclHeadersRequest.getAmzGrantFullControl()));
         }
 
         return headers;
@@ -741,6 +724,7 @@ public class S3Client {
                 .putHeader(Headers.HOST, hostname);
 
         s3ClientRequest.headers().addAll(populateInitMultipartUploadHeaders(initMultipartUploadRequest));
+        s3ClientRequest.headers().addAll(populateAclHeadersRequest(initMultipartUploadRequest));
         return s3ClientRequest;
     }
 
@@ -773,24 +757,6 @@ public class S3Client {
         }
         if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzWebsiteRedirectLocation()) != null) {
             headers.add(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION, StringUtils.trim(multipartPutObjectRequest.getAmzWebsiteRedirectLocation()));
-        }
-        if (multipartPutObjectRequest.getAmzAcl() != null) {
-            headers.add(Headers.X_AMZ_ACL, multipartPutObjectRequest.getAmzAcl().getValue());
-        }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzGrantRead()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(multipartPutObjectRequest.getAmzGrantRead()));
-        }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzGrantWrite()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_WRITE, StringUtils.trim(multipartPutObjectRequest.getAmzGrantWrite()));
-        }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzGrantReadAcp()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_READ_ACP, StringUtils.trim(multipartPutObjectRequest.getAmzGrantReadAcp()));
-        }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzGrantWriteAcp()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_WRITE_ACP, StringUtils.trim(multipartPutObjectRequest.getAmzGrantWriteAcp()));
-        }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzGrantFullControl()) != null) {
-            headers.add(Headers.X_AMZ_GRANT_FULL_CONTROL, StringUtils.trim(multipartPutObjectRequest.getAmzGrantFullControl()));
         }
 
         return headers;
@@ -917,6 +883,7 @@ public class S3Client {
 
         s3ClientRequest.putHeader(Headers.X_AMZ_COPY_SOURCE, "/" + sourceBucket + "/" + sourceKey);
         s3ClientRequest.headers().addAll(populateCopyObjectHeaders(copyObjectRequest));
+        s3ClientRequest.headers().addAll(populateAclHeadersRequest(copyObjectRequest));
         return s3ClientRequest;
     }
 

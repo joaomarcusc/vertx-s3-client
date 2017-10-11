@@ -15,7 +15,6 @@
  */
 package com.hubrick.vertx.s3.model.request;
 
-import com.hubrick.vertx.s3.model.CannedAcl;
 import com.hubrick.vertx.s3.model.StorageClass;
 import io.vertx.core.MultiMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -26,7 +25,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @author Emir Dizdarevic
  * @since 3.0.0
  */
-public class InitMultipartUploadRequest {
+public class InitMultipartUploadRequest extends AclHeadersRequest<InitMultipartUploadRequest> {
 
     private String cacheControl;
     private String contentDisposition;
@@ -37,13 +36,6 @@ public class InitMultipartUploadRequest {
     private MultiMap amzMeta = MultiMap.caseInsensitiveMultiMap();
     private StorageClass amzStorageClass;
     private String amzWebsiteRedirectLocation;
-
-    private CannedAcl amzAcl;
-    private String amzGrantRead;
-    private String amzGrantWrite;
-    private String amzGrantReadAcp;
-    private String amzGrantWriteAcp;
-    private String amzGrantFullControl;
 
     public InitMultipartUploadRequest withCacheControl(String cacheControl) {
         this.cacheControl = cacheControl;
@@ -90,36 +82,6 @@ public class InitMultipartUploadRequest {
         return this;
     }
 
-    public InitMultipartUploadRequest withAmzAcl(CannedAcl amzAcl) {
-        this.amzAcl = amzAcl;
-        return this;
-    }
-
-    public InitMultipartUploadRequest withAmzGrantRead(String amzGrantRead) {
-        this.amzGrantRead = amzGrantRead;
-        return this;
-    }
-
-    public InitMultipartUploadRequest withAmzGrantWrite(String amzGrantWrite) {
-        this.amzGrantWrite = amzGrantWrite;
-        return this;
-    }
-
-    public InitMultipartUploadRequest withAmzGrantReadAcp(String amzGrantReadAcp) {
-        this.amzGrantReadAcp = amzGrantReadAcp;
-        return this;
-    }
-
-    public InitMultipartUploadRequest withAmzGrantWriteAcp(String amzGrantWriteAcp) {
-        this.amzGrantWriteAcp = amzGrantWriteAcp;
-        return this;
-    }
-
-    public InitMultipartUploadRequest withAmzGrantFullControl(String amzGrantFullControl) {
-        this.amzGrantFullControl = amzGrantFullControl;
-        return this;
-    }
-
     public String getCacheControl() {
         return cacheControl;
     }
@@ -150,30 +112,6 @@ public class InitMultipartUploadRequest {
 
     public String getAmzWebsiteRedirectLocation() {
         return amzWebsiteRedirectLocation;
-    }
-
-    public CannedAcl getAmzAcl() {
-        return amzAcl;
-    }
-
-    public String getAmzGrantRead() {
-        return amzGrantRead;
-    }
-
-    public String getAmzGrantWrite() {
-        return amzGrantWrite;
-    }
-
-    public String getAmzGrantReadAcp() {
-        return amzGrantReadAcp;
-    }
-
-    public String getAmzGrantWriteAcp() {
-        return amzGrantWriteAcp;
-    }
-
-    public String getAmzGrantFullControl() {
-        return amzGrantFullControl;
     }
 
     @Override
