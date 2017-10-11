@@ -188,7 +188,7 @@ public class S3Client {
                           Handler<Response<GetObjectResponseHeaders, ReadStream<Buffer>>> handler,
                           Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(getObjectRequest, "getObjectRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -203,13 +203,31 @@ public class S3Client {
         request.end();
     }
 
+    public void getObjectAcl(String bucket,
+                             String key,
+                             Handler<Response<CommonResponseHeaders, AccessControlPolicy>> handler,
+                             Handler<Throwable> exceptionHandler) {
+        checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
+        checkNotNull(handler, "handler must not be null");
+        checkNotNull(exceptionHandler, "exceptionHandler must not be null");
+
+        final S3ClientRequest request = createGetAclRequest(
+                bucket,
+                key,
+                new XmlBodyResponseHandler<>("getObjectAcl", jaxbUnmarshaller, new CommonResponseHeadersMapper(), handler, exceptionHandler)
+        );
+        request.exceptionHandler(exceptionHandler);
+        request.end();
+    }
+
     public void headObject(String bucket,
                            String key,
                            HeadObjectRequest headObjectRequest,
                            Handler<Response<HeadObjectResponseHeaders, Void>> handler,
                            Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(headObjectRequest, "headObjectRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -230,7 +248,7 @@ public class S3Client {
                           Handler<Response<PutObjectResponseHeaders, Void>> handler,
                           Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(putObjectRequest, "putObjectRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -251,7 +269,7 @@ public class S3Client {
                              Handler<Response<CommonResponseHeaders, Void>> handler,
                              Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(putObjectAclRequest, "putObjectAclRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -264,7 +282,7 @@ public class S3Client {
         );
         request.exceptionHandler(exceptionHandler);
 
-        if(putObjectAclRequest.getAccessControlPolicy() != null) {
+        if (putObjectAclRequest.getAccessControlPolicy() != null) {
             try {
                 final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 jaxbMarshaller.marshal(putObjectAclRequest.getAccessControlPolicy(), outputStream);
@@ -296,7 +314,7 @@ public class S3Client {
                                Handler<Response<CommonResponseHeaders, Void>> handler,
                                Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(adaptiveUploadRequest, "adaptiveUploadRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -399,7 +417,7 @@ public class S3Client {
                                     Handler<Response<InitMultipartUploadResponseHeaders, MultipartUploadWriteStream>> handler,
                                     Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(initMultipartUploadRequest, "initMultipartUploadRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -447,7 +465,7 @@ public class S3Client {
                                         Handler<Response<ContinueMultipartUploadResponseHeaders, Void>> handler,
                                         Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(continueMultipartUploadRequest, "continueMultipartUploadRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -477,7 +495,7 @@ public class S3Client {
                                         Handler<Response<CompleteMultipartUploadResponseHeaders, CompleteMultipartUploadResponse>> handler,
                                         Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(completeMultipartUploadRequest, "completeMultipartUploadRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -515,7 +533,7 @@ public class S3Client {
                                      Handler<Response<CommonResponseHeaders, Void>> handler,
                                      Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(abortMultipartUploadRequest, "abortMultipartUploadRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -563,7 +581,7 @@ public class S3Client {
                              Handler<Response<CommonResponseHeaders, Void>> handler,
                              Handler<Throwable> exceptionHandler) {
         checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
-        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "key must not be null");
         checkNotNull(deleteObjectRequest, "deleteObjectRequest must not be null");
         checkNotNull(handler, "handler must not be null");
         checkNotNull(exceptionHandler, "exceptionHandler must not be null");
@@ -1008,6 +1026,26 @@ public class S3Client {
         return headers;
     }
 
+    private S3ClientRequest createGetAclRequest(String bucket,
+                                                String key,
+                                                Handler<HttpClientResponse> handler) {
+        final HttpClientRequest httpRequest = client.get("/" + bucket + "/" + key + "?acl", handler);
+        final S3ClientRequest s3ClientRequest = new S3ClientRequest(
+                "GET",
+                awsRegion,
+                awsServiceName,
+                httpRequest,
+                awsAccessKey,
+                awsSecretKey,
+                clock,
+                signPayload
+        )
+                .setTimeout(globalTimeout)
+                .putHeader(Headers.HOST, hostname);
+
+        return s3ClientRequest;
+    }
+
     private S3ClientRequest createHeadRequest(String bucket,
                                               String key,
                                               HeadObjectRequest headObjectRequest,
@@ -1133,7 +1171,7 @@ public class S3Client {
         return headers;
     }
 
-    private class StreamResponseHandler<H extends CommonResponseHeaders> implements Handler<HttpClientResponse> {
+    private static class StreamResponseHandler<H extends CommonResponseHeaders> implements Handler<HttpClientResponse> {
 
         private final String action;
         private final Unmarshaller jaxbUnmarshaller;
@@ -1178,7 +1216,7 @@ public class S3Client {
         }
     }
 
-    private class XmlBodyResponseHandler<H extends CommonResponseHeaders, B> implements Handler<HttpClientResponse> {
+    private static class XmlBodyResponseHandler<H extends CommonResponseHeaders, B> implements Handler<HttpClientResponse> {
 
         private final String action;
         private final Unmarshaller jaxbUnmarshaller;
@@ -1234,7 +1272,7 @@ public class S3Client {
         }
     }
 
-    private class HeadersResponseHandler<H extends CommonResponseHeaders> implements Handler<HttpClientResponse> {
+    private static class HeadersResponseHandler<H extends CommonResponseHeaders> implements Handler<HttpClientResponse> {
 
         private final String action;
         private final Unmarshaller jaxbUnmarshaller;
@@ -1493,7 +1531,7 @@ public class S3Client {
         }
     }
 
-    private SAXSource convertToSaxSource(byte[] payload) throws SAXException {
+    private static SAXSource convertToSaxSource(byte[] payload) throws SAXException {
         //Create an XMLReader to use with our filter
         final XMLReader reader = XMLReaderFactory.createXMLReader();
 

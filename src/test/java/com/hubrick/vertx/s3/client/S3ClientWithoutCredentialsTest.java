@@ -15,10 +15,16 @@
  */
 package com.hubrick.vertx.s3.client;
 
+import com.hubrick.vertx.s3.model.AccessControlPolicy;
+import com.hubrick.vertx.s3.model.Grant;
+import com.hubrick.vertx.s3.model.Grantee;
+import com.hubrick.vertx.s3.model.Owner;
+import com.hubrick.vertx.s3.model.Permission;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
@@ -38,6 +44,12 @@ public class S3ClientWithoutCredentialsTest extends AbstractS3ClientTest {
         verifyGetObject(testContext);
     }
 
+    @Test
+    public void testGetObjectAcl(TestContext testContext) throws IOException {
+        final AccessControlPolicy accessControlPolicy = new AccessControlPolicy(new Owner("someid", "somedisplayname"), Collections.singletonList(new Grant(new Grantee("id", "displayname"), Permission.FULL_CONTROL)));
+        mockGetObjectAcl(accessControlPolicy);
+        verifyGetObjectAcl(testContext, accessControlPolicy);
+    }
 
     @Test
     public void testHeadObject(TestContext testContext) throws IOException {
@@ -51,6 +63,24 @@ public class S3ClientWithoutCredentialsTest extends AbstractS3ClientTest {
         mockPutObject();
 
         verifyPutObject(testContext);
+    }
+
+    @Test
+    public void testPutObjectAclWithHeaders(TestContext testContext) throws IOException {
+        mockPutObjectAclWithHeaders(
+        );
+
+        verifyPutObjectAclWithHeaders(testContext);
+    }
+
+    @Test
+    public void testPutObjectAclWithBody(TestContext testContext) throws IOException {
+        final AccessControlPolicy accessControlPolicy = new AccessControlPolicy(new Owner("someid", "somedisplayname"), Collections.singletonList(new Grant(new Grantee("id", "displayname"), Permission.FULL_CONTROL)));
+        mockPutObjectAclWithBody(
+                accessControlPolicy
+        );
+
+        verifyPutObjectAclWithBody(accessControlPolicy, testContext);
     }
 
     @Test

@@ -121,17 +121,6 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
         );
     }
 
-    void mockHeadObject(Header... expectedHeaders) throws IOException {
-        mock(
-                Collections.emptyMap(),
-                "HEAD",
-                "/bucket/key",
-                200,
-                "0".getBytes(),
-                expectedHeaders
-        );
-    }
-
     void mockGetObjectErrorResponse(Header... expectedHeaders) throws IOException {
         mock(
                 Collections.emptyMap(),
@@ -142,6 +131,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 expectedHeaders
         );
     }
+
 
     void verifyGetObject(TestContext testContext) {
         final Async async = testContext.async();
@@ -159,17 +149,6 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 testContext::fail);
     }
 
-    void verifyHeadObject(TestContext testContext) {
-        final Async async = testContext.async();
-        s3Client.headObject("bucket", "key", new HeadObjectRequest(),
-                (response) -> {
-                    assertThat(testContext, response, notNullValue());
-                    async.complete();
-                },
-                testContext::fail
-        );
-    }
-
     void verifyGetObjectErrorResponse(final TestContext testContext) {
 
         final Async async = testContext.async();
@@ -185,6 +164,87 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                     assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
                     async.complete();
                 }
+        );
+    }
+
+    void mockGetObjectAcl(AccessControlPolicy accessControlPolicy, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("acl", ImmutableList.of("")),
+                "GET",
+                "/bucket/key",
+                200,
+                null,
+                new StringBody("<AccessControlPolicy><Owner><ID>" + accessControlPolicy.getOwner().getId() + "</ID><DisplayName>" + accessControlPolicy.getOwner().getDisplayName() + "</DisplayName></Owner>" +
+                        "<AccessControlList><Grant><Grantee><ID>" + accessControlPolicy.getGrants().get(0).getGrantee().getId() + "</ID><DisplayName>" + accessControlPolicy.getGrants().get(0).getGrantee().getDisplayName() + "</DisplayName></Grantee><Permission>" + accessControlPolicy.getGrants().get(0).getPermission() + "</Permission></Grant></AccessControlList></AccessControlPolicy>"
+                ),
+                Collections.emptyList(),
+                expectedHeaders
+        );
+    }
+
+    void mockGetObjectAclErrorResponse(Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("acl", ImmutableList.of("")),
+                "GET",
+                "/bucket/key",
+                403,
+                null,
+                new BinaryBody(Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml"))),
+                Collections.emptyList(),
+                expectedHeaders
+        );
+    }
+
+    void verifyGetObjectAcl(TestContext testContext, AccessControlPolicy accessControlPolicy) {
+        final Async async = testContext.async();
+        s3Client.getObjectAcl("bucket", "key",
+                (getObjectResponse) -> {
+                    assertThat(testContext, getObjectResponse.getHeader(), notNullValue());
+                    assertThat(testContext, getObjectResponse.getData(), notNullValue());
+                    assertThat(testContext, getObjectResponse.getData(), is(accessControlPolicy));
+
+                    async.complete();
+                },
+                testContext::fail);
+    }
+
+    void verifyGetObjectAclErrorResponse(final TestContext testContext) {
+
+        final Async async = testContext.async();
+        s3Client.getObjectAcl("bucket", "key",
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void mockHeadObject(Header... expectedHeaders) throws IOException {
+        mock(
+                Collections.emptyMap(),
+                "HEAD",
+                "/bucket/key",
+                200,
+                "0".getBytes(),
+                expectedHeaders
+        );
+    }
+
+    void verifyHeadObject(TestContext testContext) {
+        final Async async = testContext.async();
+        s3Client.headObject("bucket", "key", new HeadObjectRequest(),
+                (response) -> {
+                    assertThat(testContext, response, notNullValue());
+                    async.complete();
+                },
+                testContext::fail
         );
     }
 
