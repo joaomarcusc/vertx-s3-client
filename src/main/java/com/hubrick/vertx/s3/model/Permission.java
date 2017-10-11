@@ -18,33 +18,17 @@ package com.hubrick.vertx.s3.model;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlType;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Emir Dizdarevic
- * @since 3.0.0
+ * @since 3.2.0
  */
 @XmlType
 @XmlEnum(String.class)
-public enum StorageClass {
-    @XmlEnumValue("STANDARD") STANDARD,
-    @XmlEnumValue("STANDARD_IA") STANDARD_IA,
-    @XmlEnumValue("REDUCED_REDUNDANCY") REDUCED_REDUNDANCY;
-
-    private static Map<String, StorageClass> REVERSE_LOOKUP = new HashMap<>();
-    static {
-        for(StorageClass storageClass : values()) {
-            REVERSE_LOOKUP.put(storageClass.name(), storageClass);
-        }
-    }
-
-    public static StorageClass fromString(String value) {
-        return REVERSE_LOOKUP.get(value);
-    }
-
-    @Override
-    public String toString() {
-        return name();
-    }
+public enum Permission {
+    @XmlEnumValue("READ") READ,
+    @XmlEnumValue("WRITE") WRITE,
+    @XmlEnumValue("READ_ACP") READ_ACP,
+    @XmlEnumValue("WRITE_ACP") WRITE_ACP,
+    @XmlEnumValue("FULL_CONTROL") FULL_CONTROL;
 }

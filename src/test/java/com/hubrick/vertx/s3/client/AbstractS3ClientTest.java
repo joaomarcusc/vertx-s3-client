@@ -21,6 +21,8 @@ import com.google.common.io.Resources;
 import com.hubrick.vertx.s3.AbstractFunctionalTest;
 import com.hubrick.vertx.s3.S3TestCredentials;
 import com.hubrick.vertx.s3.exception.HttpErrorException;
+import com.hubrick.vertx.s3.model.AccessControlPolicy;
+import com.hubrick.vertx.s3.model.CannedAcl;
 import com.hubrick.vertx.s3.model.Part;
 import com.hubrick.vertx.s3.model.Response;
 import com.hubrick.vertx.s3.model.header.CommonResponseHeaders;
@@ -36,6 +38,8 @@ import com.hubrick.vertx.s3.model.request.GetBucketRequest;
 import com.hubrick.vertx.s3.model.request.GetObjectRequest;
 import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
 import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.PutObjectAclRequest;
+import com.hubrick.vertx.s3.model.request.PutObjectHeaderAclRequest;
 import com.hubrick.vertx.s3.model.request.PutObjectRequest;
 import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
 import com.hubrick.vertx.s3.model.response.MultipartUploadWriteStream;
@@ -45,8 +49,12 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Before;
+import org.mockserver.model.BinaryBody;
+import org.mockserver.model.Body;
 import org.mockserver.model.Header;
 import org.mockserver.model.HttpRequest;
+import org.mockserver.model.StringBody;
+import org.mockserver.model.XmlBody;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -186,8 +194,8 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 "PUT",
                 "/bucket/key",
                 200,
-                "test".getBytes(),
-                "<>".getBytes(),
+                new StringBody("test"),
+                new StringBody("<>"),
                 Collections.emptyList(),
                 expectedHeaders
         );
@@ -199,8 +207,8 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                 "PUT",
                 "/bucket/key",
                 403,
-                "test".getBytes(),
-                Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                new StringBody("test"),
+                new BinaryBody(Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml"))),
                 Collections.emptyList(),
                 expectedHeaders
         );
@@ -221,6 +229,118 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
         final Async async = testContext.async();
         s3Client.putObject("bucket", "key", new PutObjectRequest(Buffer.buffer("test")),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void mockPutObjectAclWithHeaders(Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("acl", ImmutableList.of("")),
+                "PUT",
+                "/bucket/key",
+                200,
+                "test".getBytes(),
+                Collections.emptyList(),
+                expectedHeaders
+        );
+    }
+
+    void verifyPutObjectAclWithHeaders(final TestContext testContext) {
+
+        final Async async = testContext.async();
+        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(new PutObjectHeaderAclRequest().withAmzAcl(CannedAcl.PRIVATE)),
+                (putResponseHeaders) -> {
+                    assertThat(testContext, putResponseHeaders, notNullValue());
+                    async.complete();
+                },
+                testContext::fail);
+    }
+
+    void mockPutObjectAclWithHeadersErrorResponse(Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("acl", ImmutableList.of("")),
+                "PUT",
+                "/bucket/key",
+                403,
+                Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml")),
+                Collections.emptyList(),
+                expectedHeaders
+        );
+    }
+
+    void verifyPutObjectAclWithHeadersErrorResponse(final TestContext testContext) {
+
+        final Async async = testContext.async();
+        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(new PutObjectHeaderAclRequest().withAmzAcl(CannedAcl.PRIVATE)),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    async.complete();
+                }
+        );
+    }
+
+    void mockPutObjectAclWithBody(AccessControlPolicy accessControlPolicy, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("acl", ImmutableList.of("")),
+                "PUT",
+                "/bucket/key",
+                200,
+                new XmlBody("<AccessControlPolicy><Owner><ID>" + accessControlPolicy.getOwner().getId() + "</ID><DisplayName>" + accessControlPolicy.getOwner().getDisplayName() + "</DisplayName></Owner>" +
+                        "<AccessControlList><Grant><Grantee><ID>" + accessControlPolicy.getGrants().get(0).getGrantee().getId() + "</ID><DisplayName>" + accessControlPolicy.getGrants().get(0).getGrantee().getDisplayName() + "</DisplayName></Grantee><Permission>" + accessControlPolicy.getGrants().get(0).getPermission() + "</Permission></Grant></AccessControlList></AccessControlPolicy>"
+                ),
+                new StringBody("<>"),
+                Collections.emptyList(),
+                expectedHeaders
+        );
+    }
+
+    void verifyPutObjectAclWithBody(AccessControlPolicy accessControlPolicy, final TestContext testContext) {
+
+        final Async async = testContext.async();
+        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(accessControlPolicy),
+                (putResponseHeaders) -> {
+                    assertThat(testContext, putResponseHeaders, notNullValue());
+                    async.complete();
+                },
+                testContext::fail);
+    }
+
+    void mockPutObjectAclWithBodyErrorResponse(AccessControlPolicy accessControlPolicy, Header... expectedHeaders) throws IOException {
+        mock(
+                ImmutableMap.of("acl", ImmutableList.of("")),
+                "PUT",
+                "/bucket/key",
+                403,
+                new XmlBody("<AccessControlPolicy><Owner><ID>" + accessControlPolicy.getOwner().getId() + "</ID><DisplayName>" + accessControlPolicy.getOwner().getDisplayName() + "</DisplayName></Owner>" +
+                        "<AccessControlList><Grant><Grantee><ID>" + accessControlPolicy.getGrants().get(0).getGrantee().getId() + "</ID><DisplayName>" + accessControlPolicy.getGrants().get(0).getGrantee().getDisplayName() + "</DisplayName></Grantee><Permission>" + accessControlPolicy.getGrants().get(0).getPermission() + "</Permission></Grant></AccessControlList></AccessControlPolicy>"
+                ),
+                new BinaryBody(Resources.toByteArray(Resources.getResource(AbstractS3ClientTest.class, "/response/errorResponse.xml"))),
+                Collections.emptyList(),
+                expectedHeaders
+        );
+    }
+
+    void verifyPutObjectAclWithBodyErrorResponse(AccessControlPolicy accessControlPolicy, final TestContext testContext) {
+
+        final Async async = testContext.async();
+        s3Client.putObjectAcl("bucket", "key", new PutObjectAclRequest(accessControlPolicy),
                 (result) -> {
                     testContext.fail("Exceptions should be thrown");
                 },
@@ -666,14 +786,14 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
     }
 
     void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] responseBody, Header... expectedHeaders) throws IOException {
-        mock(expectedQueryParams, method, path, statusCode, null, responseBody, Collections.emptyList(), expectedHeaders);
+        mock(expectedQueryParams, method, path, statusCode, null, new BinaryBody(responseBody), Collections.emptyList(), expectedHeaders);
     }
 
     void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] responseBody, List<Header> responseHeaders, Header... expectedHeaders) throws IOException {
-        mock(expectedQueryParams, method, path, statusCode, null, responseBody, responseHeaders, expectedHeaders);
+        mock(expectedQueryParams, method, path, statusCode, null, new BinaryBody(responseBody), responseHeaders, expectedHeaders);
     }
 
-    void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, byte[] requestBody, byte[] responseBody, List<Header> responseHeaders, Header... expectedHeaders) throws IOException {
+    void mock(Map<String, List<String>> expectedQueryParams, String method, String path, Integer statusCode, Body requestBody, Body responseBody, List<Header> responseHeaders, Header... expectedHeaders) throws IOException {
         final HttpRequest httpRequest = request()
                 .withMethod(method)
                 .withPath(path)

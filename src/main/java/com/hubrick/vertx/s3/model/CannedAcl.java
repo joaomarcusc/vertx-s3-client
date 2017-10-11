@@ -15,36 +15,32 @@
  */
 package com.hubrick.vertx.s3.model;
 
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlType;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author Emir Dizdarevic
- * @since 3.0.0
+ * @since 3.2.0
  */
-@XmlType
-@XmlEnum(String.class)
-public enum StorageClass {
-    @XmlEnumValue("STANDARD") STANDARD,
-    @XmlEnumValue("STANDARD_IA") STANDARD_IA,
-    @XmlEnumValue("REDUCED_REDUNDANCY") REDUCED_REDUNDANCY;
+public enum CannedAcl {
+    PRIVATE("private"),
+    PUBLIC_READ("public-read"),
+    PUBLIC_READ_WRITE("public-read-write"),
+    AWS_EXEC_READ("aws-exec-read"),
+    AUTHENTCATED_READ("authenticated-read"),
+    BUCKET_OWNER_READ("bucket-owner-read"),
+    BUCKET_OWNER_FULL_CONTROL("bucket-owner-full-control"),
+    LOG_DELIVERY_WRITE("log-delivery-write");
 
-    private static Map<String, StorageClass> REVERSE_LOOKUP = new HashMap<>();
-    static {
-        for(StorageClass storageClass : values()) {
-            REVERSE_LOOKUP.put(storageClass.name(), storageClass);
-        }
+    private final String value;
+
+    CannedAcl(String value) {
+        this.value = value;
     }
 
-    public static StorageClass fromString(String value) {
-        return REVERSE_LOOKUP.get(value);
+    public String getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
-        return name();
+        return value;
     }
 }

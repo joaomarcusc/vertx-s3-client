@@ -18,9 +18,12 @@ package com.hubrick.vertx.s3.client;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.hubrick.vertx.s3.exception.HttpErrorException;
+import com.hubrick.vertx.s3.model.AccessControlPolicy;
 import com.hubrick.vertx.s3.model.CommonPrefixes;
 import com.hubrick.vertx.s3.model.Connection;
 import com.hubrick.vertx.s3.model.Contents;
+import com.hubrick.vertx.s3.model.Grant;
+import com.hubrick.vertx.s3.model.Grantee;
 import com.hubrick.vertx.s3.model.HeaderOnlyResponse;
 import com.hubrick.vertx.s3.model.Owner;
 import com.hubrick.vertx.s3.model.Part;
@@ -48,6 +51,8 @@ import com.hubrick.vertx.s3.model.request.GetBucketRequest;
 import com.hubrick.vertx.s3.model.request.GetObjectRequest;
 import com.hubrick.vertx.s3.model.request.HeadObjectRequest;
 import com.hubrick.vertx.s3.model.request.InitMultipartUploadRequest;
+import com.hubrick.vertx.s3.model.request.PutObjectAclRequest;
+import com.hubrick.vertx.s3.model.request.PutObjectHeaderAclRequest;
 import com.hubrick.vertx.s3.model.request.PutObjectRequest;
 import com.hubrick.vertx.s3.model.response.CompleteMultipartUploadResponse;
 import com.hubrick.vertx.s3.model.response.CopyObjectResponse;
@@ -240,6 +245,39 @@ public class S3Client {
         request.end(putObjectRequest.getData());
     }
 
+    public void putObjectAcl(String bucket,
+                             String key,
+                             PutObjectAclRequest putObjectAclRequest,
+                             Handler<Response<CommonResponseHeaders, Void>> handler,
+                             Handler<Throwable> exceptionHandler) {
+        checkNotNull(StringUtils.trimToNull(bucket), "bucket must not be null");
+        checkNotNull(StringUtils.trimToNull(key), "bucket must not be null");
+        checkNotNull(putObjectAclRequest, "putObjectAclRequest must not be null");
+        checkNotNull(handler, "handler must not be null");
+        checkNotNull(exceptionHandler, "exceptionHandler must not be null");
+
+        final S3ClientRequest request = createPutAclRequest(
+                bucket,
+                key,
+                Optional.ofNullable(putObjectAclRequest.getPutObjectHeaderAclRequest()),
+                new HeadersResponseHandler("putObjectAcl", jaxbUnmarshaller, new PutResponseHeadersMapper(), handler, exceptionHandler)
+        );
+        request.exceptionHandler(exceptionHandler);
+
+        if(putObjectAclRequest.getAccessControlPolicy() != null) {
+            try {
+                final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                jaxbMarshaller.marshal(putObjectAclRequest.getAccessControlPolicy(), outputStream);
+                request.putHeader(Headers.CONTENT_TYPE, "application/xml");
+                request.end(Buffer.buffer(outputStream.toByteArray()));
+            } catch (JAXBException e) {
+                exceptionHandler.handle(e);
+            }
+        } else {
+            request.end();
+        }
+    }
+
     /**
      * Adaptively upload a file to S3 and take away the burden to choose between direct or multipart upload.
      * Since the minimum size of the multipart part has to be 5MB this method handles the upload automatically.
@@ -266,7 +304,7 @@ public class S3Client {
         final ChunkedBufferReadStream chunkedBufferReadStream = new ChunkedBufferReadStream(vertx, adaptiveUploadRequest.getReadStream(), FIVE_MB_IN_BYTES);
         chunkedBufferReadStream.exceptionHandler(throwable -> exceptionHandler.handle(throwable));
         chunkedBufferReadStream.setChunkHandler(chunk -> {
-            if(chunkedBufferReadStream.numberOfChunks() == 0) {
+            if (chunkedBufferReadStream.numberOfChunks() == 0) {
                 if (chunk.length() < FIVE_MB_IN_BYTES) {
                     final Buffer buffer = Buffer.buffer();
                     chunkedBufferReadStream.handler(buffer::appendBuffer);
@@ -580,6 +618,28 @@ public class S3Client {
         return s3ClientRequest;
     }
 
+    private S3ClientRequest createPutAclRequest(String bucket,
+                                                String key,
+                                                Optional<PutObjectHeaderAclRequest> putObjectHeaderAclRequest,
+                                                Handler<HttpClientResponse> handler) {
+        HttpClientRequest httpRequest = client.put("/" + bucket + "/" + key + "?acl", handler);
+        final S3ClientRequest s3ClientRequest = new S3ClientRequest(
+                "PUT",
+                awsRegion,
+                awsServiceName,
+                httpRequest,
+                awsAccessKey,
+                awsSecretKey,
+                clock,
+                signPayload
+        )
+                .setTimeout(globalTimeout)
+                .putHeader(Headers.HOST, hostname);
+
+        putObjectHeaderAclRequest.ifPresent(e -> s3ClientRequest.headers().addAll(populatePutAclObjectHeaders(e)));
+        return s3ClientRequest;
+    }
+
     private MultiMap populatePutObjectHeaders(PutObjectRequest putObjectRequest) {
         final MultiMap headers = MultiMap.caseInsensitiveMultiMap();
 
@@ -615,8 +675,8 @@ public class S3Client {
         if (StringUtils.trimToNull(putObjectRequest.getAmzWebsiteRedirectLocation()) != null) {
             headers.add(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION, StringUtils.trim(putObjectRequest.getAmzWebsiteRedirectLocation()));
         }
-        if (StringUtils.trimToNull(putObjectRequest.getAmzAcl()) != null) {
-            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(putObjectRequest.getAmzAcl()));
+        if (putObjectRequest.getAmzAcl() != null) {
+            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(putObjectRequest.getAmzAcl().getValue()));
         }
         if (StringUtils.trimToNull(putObjectRequest.getAmzGrantRead()) != null) {
             headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(putObjectRequest.getAmzGrantRead()));
@@ -632,6 +692,31 @@ public class S3Client {
         }
         if (StringUtils.trimToNull(putObjectRequest.getAmzGrantFullControl()) != null) {
             headers.add(Headers.X_AMZ_GRANT_FULL_CONTROL, StringUtils.trim(putObjectRequest.getAmzGrantFullControl()));
+        }
+
+        return headers;
+    }
+
+    private MultiMap populatePutAclObjectHeaders(PutObjectHeaderAclRequest putObjectHeaderAclRequest) {
+        final MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+
+        if (putObjectHeaderAclRequest.getAmzAcl() != null) {
+            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(putObjectHeaderAclRequest.getAmzAcl().getValue()));
+        }
+        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantRead()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantRead()));
+        }
+        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantWrite()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_WRITE, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantWrite()));
+        }
+        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantReadAcp()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_READ_ACP, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantReadAcp()));
+        }
+        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantWriteAcp()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_WRITE_ACP, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantWriteAcp()));
+        }
+        if (StringUtils.trimToNull(putObjectHeaderAclRequest.getAmzGrantFullControl()) != null) {
+            headers.add(Headers.X_AMZ_GRANT_FULL_CONTROL, StringUtils.trim(putObjectHeaderAclRequest.getAmzGrantFullControl()));
         }
 
         return headers;
@@ -689,8 +774,8 @@ public class S3Client {
         if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzWebsiteRedirectLocation()) != null) {
             headers.add(Headers.X_AMZ_WEBSITE_REDIRECT_LOCATION, StringUtils.trim(multipartPutObjectRequest.getAmzWebsiteRedirectLocation()));
         }
-        if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzAcl()) != null) {
-            headers.add(Headers.X_AMZ_ACL, StringUtils.trim(multipartPutObjectRequest.getAmzAcl()));
+        if (multipartPutObjectRequest.getAmzAcl() != null) {
+            headers.add(Headers.X_AMZ_ACL, multipartPutObjectRequest.getAmzAcl().getValue());
         }
         if (StringUtils.trimToNull(multipartPutObjectRequest.getAmzGrantRead()) != null) {
             headers.add(Headers.X_AMZ_GRANT_READ, StringUtils.trim(multipartPutObjectRequest.getAmzGrantRead()));
@@ -1405,6 +1490,9 @@ public class S3Client {
                     InitMultipartUploadResponse.class,
                     CompleteMultipartUploadRequest.class,
                     CompleteMultipartUploadResponse.class,
+                    AccessControlPolicy.class,
+                    Grant.class,
+                    Grantee.class,
                     Part.class,
                     Owner.class,
                     ErrorResponse.class

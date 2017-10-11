@@ -15,7 +15,6 @@
  */
 package com.hubrick.vertx.s3.model;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -29,34 +28,34 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 3.0.0
  */
-@XmlRootElement(name = "Owner")
+@XmlRootElement(name = "Grant")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Owner {
+public class Grant {
 
-    @XmlElement(name = "ID", required = true)
-    private String id;
+    @XmlElement(name = "Grantee", required = true)
+    private Grantee grantee;
 
-    @XmlElement(name = "DisplayName", required = true)
-    private String displayName;
+    @XmlElement(name = "Permission", required = true)
+    private Permission permission;
 
-    protected Owner() {}
+    protected Grant() {}
 
-    public Owner(String id, String displayName) {
-        checkNotNull(StringUtils.trimToNull(id), "id must not be null");
-        checkNotNull(StringUtils.trimToNull(displayName), "displayName must not be null");
+    public Grant(Grantee grantee, Permission permission) {
+        checkNotNull(grantee, "grantee must not be null");
+        checkNotNull(permission, "permission must not be null");
 
-        this.id = id;
-        this.displayName = displayName;
+        this.grantee = grantee;
+        this.permission = permission;
     }
 
-    public String getId() {
-        return id;
+    public Grantee getGrantee() {
+        return grantee;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public Permission getPermission() {
+        return permission;
     }
 
     @Override

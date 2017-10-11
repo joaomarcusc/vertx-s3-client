@@ -24,31 +24,50 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.net.URL;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Emir Dizdarevic
- * @since 2.0.0
+ * @since 3.2.0
  */
-@XmlRootElement(name = "Owner")
+@XmlRootElement(name = "Grantee")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Owner {
+public class Grantee {
 
-    @XmlElement(name = "ID", required = true)
+    @XmlElement(name = "ID")
     private String id;
 
-    @XmlElement(name = "DisplayName", required = true)
+    @XmlElement(name = "DisplayName")
     private String displayName;
 
-    protected Owner() {}
+    @XmlElement(name = "URI")
+    private URL uri;
 
-    public Owner(String id, String displayName) {
+    @XmlElement(name = "EmailAddress")
+    private String emailAddress;
+
+    protected Grantee() {}
+
+    public Grantee(String id, String displayName) {
         checkNotNull(StringUtils.trimToNull(id), "id must not be null");
         checkNotNull(StringUtils.trimToNull(displayName), "displayName must not be null");
 
         this.id = id;
         this.displayName = displayName;
+    }
+
+    public Grantee(URL uri) {
+        checkNotNull(uri, "uri must not be null");
+
+        this.uri = uri;
+    }
+
+    public Grantee(String emailAddress) {
+        checkNotNull(StringUtils.trimToNull(emailAddress), "emailAddress must not be null");
+
+        this.emailAddress = emailAddress;
     }
 
     public String getId() {
@@ -57,6 +76,14 @@ public class Owner {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public URL getUri() {
+        return uri;
+    }
+
+    public String getEmailAddress() {
+        return emailAddress;
     }
 
     @Override
