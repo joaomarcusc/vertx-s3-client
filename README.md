@@ -47,6 +47,14 @@ A fully functional Vert.x client for S3
                 Throwable::printStackTrace
         );
         
+        s3Client.putObjectAcl(
+                "bucket", 
+                "key",
+                new PutObjectAclRequest(new PutObjectHeaderAclRequest().withAmzAcl(CannedAcl.PRIVATE)),
+                response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
+                Throwable::printStackTrace
+        );
+        
         s3Client.deleteObject(
                 "bucket", 
                 "key",
