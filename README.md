@@ -38,6 +38,13 @@ A fully functional Vert.x client for S3
                 response -> System.out.println("Response from AWS: " + response.getHeader().getContentType()),
                 Throwable::printStackTrace
         );
+        
+        s3Client.getObjectAcl(
+                "bucket", 
+                "key",
+                response -> System.out.println("Response from AWS: " + response.getData().getOwner()),
+                Throwable::printStackTrace
+        );
 
         s3Client.putObject(
                 "bucket", 
