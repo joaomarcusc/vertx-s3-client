@@ -15,11 +15,17 @@
  */
 package com.hubrick.vertx.s3.client;
 
+import com.hubrick.vertx.s3.model.AccessControlPolicy;
+import com.hubrick.vertx.s3.model.Grant;
+import com.hubrick.vertx.s3.model.Grantee;
+import com.hubrick.vertx.s3.model.Owner;
+import com.hubrick.vertx.s3.model.Permission;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 import org.mockserver.model.Header;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
@@ -45,6 +51,19 @@ public class S3ClientWithCredentialsTest extends AbstractS3ClientTest {
     }
 
     @Test
+    public void testGetObjectAcl(TestContext testContext) throws IOException {
+        final AccessControlPolicy accessControlPolicy = new AccessControlPolicy(new Owner("someid", "somedisplayname"), Collections.singletonList(new Grant(new Grantee("id", "displayname"), Permission.FULL_CONTROL)));
+        mockGetObjectAcl(
+                accessControlPolicy,
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-date, Signature=9fa68c78ce023d0a5921d6b626df9ee03978a9c3a07f8f20c4eff782fd4cb1dd")
+        );
+
+        verifyGetObjectAcl(testContext, accessControlPolicy);
+    }
+
+    @Test
     public void testHeadObject(TestContext testContext) throws IOException {
         mockHeadObject(
                 Header.header("X-Amz-Date", "20161110T130214Z"),
@@ -64,6 +83,31 @@ public class S3ClientWithCredentialsTest extends AbstractS3ClientTest {
         );
 
         verifyPutObject(testContext);
+    }
+
+    @Test
+    public void testPutObjectAclWithHeaders(TestContext testContext) throws IOException {
+        mockPutObjectAclWithHeaders(
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("Authorization", "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-acl;x-amz-date, Signature=42d577fe244d7925509b6fa86dfdf0ae6ccde6efaec8537c3008ae87a66cc5c7"),
+                Header.header("X-Amz-Acl", "private")
+        );
+
+        verifyPutObjectAclWithHeaders(testContext);
+    }
+
+    @Test
+    public void testPutObjectAclWithBody(TestContext testContext) throws IOException {
+        final AccessControlPolicy accessControlPolicy = new AccessControlPolicy(new Owner("someid", "somedisplayname"), Collections.singletonList(new Grant(new Grantee("id", "displayname"), Permission.FULL_CONTROL)));
+        mockPutObjectAclWithBody(
+                accessControlPolicy,
+                Header.header("X-Amz-Date", "20161110T130214Z"),
+                Header.header("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD"),
+                Header.header("AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20161110/us-east-1/service/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=66b07378df27534ba1a7cba3da0e51ed2b5c5447cb3eaf49774b524f75ad5495")
+        );
+
+        verifyPutObjectAclWithBody(accessControlPolicy, testContext);
     }
 
     @Test

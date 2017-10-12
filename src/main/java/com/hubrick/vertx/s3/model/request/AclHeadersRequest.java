@@ -22,7 +22,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * @author Emir Dizdarevic
- * @since 2.2.0
+ * @since 3.2.0
  */
 public class AclHeadersRequest<T extends AclHeadersRequest> {
 
