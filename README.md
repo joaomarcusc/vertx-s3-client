@@ -8,7 +8,7 @@ A fully functional Vert.x client for S3
 
 ## Dependencies
 
-### Dependency Vert.x 3.3.x
+### Dependency Vert.x 3.x.x
 ### Maven
 ```xml
 <dependency>
