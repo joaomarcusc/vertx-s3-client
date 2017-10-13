@@ -115,7 +115,7 @@ A fully functional Vert.x client for S3
             s3Client.initMultipartUpload(
                 "bucket",
                 "someid",
-                new InitMultipartUploadRequest().withContentType("video/mp4"),
+                new InitMultipartUploadRequest(asyncFile).withContentType("video/mp4"),
                 response -> {
                     asyncFile.endHandler(aVoid -> response.getData().end());
                     asyncFile.exceptionHandler(Throwable::printStackTrace);
@@ -146,7 +146,7 @@ The client will automaticaly detect the size of the stream. If it's lower then 5
             s3Client.adaptiveUpload(
                 "bucket",
                 "someid",
-                new AdaptiveUploadRequest().withContentType("video/mp4"),
+                new AdaptiveUploadRequest(asyncFile).withContentType("video/mp4"),
                 response -> {
                     // Response headers
                 },
