@@ -15,6 +15,7 @@
  */
 package com.hubrick.vertx.s3.model.response;
 
+import com.hubrick.vertx.s3.model.ErrorCode;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -37,7 +38,7 @@ import java.util.List;
 public class ErrorResponse {
 
     @XmlElement(name = "Code", required = true)
-    private String code;
+    private ErrorCode code;
 
     @XmlElement(name = "Message", required = true)
     private String message;
@@ -57,7 +58,7 @@ public class ErrorResponse {
     @XmlAnyElement
     private List<Element> rest = new LinkedList<>();
 
-    public String getCode() {
+    public ErrorCode getCode() {
         return code;
     }
 

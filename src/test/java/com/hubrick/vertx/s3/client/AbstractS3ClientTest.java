@@ -23,6 +23,7 @@ import com.hubrick.vertx.s3.S3TestCredentials;
 import com.hubrick.vertx.s3.exception.HttpErrorException;
 import com.hubrick.vertx.s3.model.AccessControlPolicy;
 import com.hubrick.vertx.s3.model.CannedAcl;
+import com.hubrick.vertx.s3.model.ErrorCode;
 import com.hubrick.vertx.s3.model.Part;
 import com.hubrick.vertx.s3.model.Response;
 import com.hubrick.vertx.s3.model.header.CommonResponseHeaders;
@@ -161,7 +162,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -220,7 +221,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -297,7 +298,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -350,7 +351,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -409,7 +410,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -460,7 +461,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -527,7 +528,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -592,7 +593,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -656,7 +657,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -719,7 +720,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -777,7 +778,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
@@ -839,7 +840,7 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
 
                     final HttpErrorException httpErrorException = (HttpErrorException) error;
                     assertThat(testContext, httpErrorException.getStatus(), is(403));
-                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is("SignatureDoesNotMatch"));
+                    assertThat(testContext, httpErrorException.getErrorResponse().getCode(), is(ErrorCode.SIGNATURE_DOES_NOT_MATCH));
                     async.complete();
                 }
         );
