@@ -236,7 +236,7 @@ public class S3Client {
                 bucket,
                 key,
                 headObjectRequest,
-                new HeadersResponseHandler("headObject", jaxbUnmarshaller, new HeadResponseHeadersMapper(), handler, exceptionHandler)
+                new HeadersResponseHandler("headObject", jaxbUnmarshaller, new HeadResponseHeadersMapper(), handler, exceptionHandler, true)
         );
         request.exceptionHandler(exceptionHandler);
         request.end();
@@ -257,7 +257,7 @@ public class S3Client {
                 bucket,
                 key,
                 putObjectRequest,
-                new HeadersResponseHandler("putObject", jaxbUnmarshaller, new PutResponseHeadersMapper(), handler, exceptionHandler)
+                new HeadersResponseHandler("putObject", jaxbUnmarshaller, new PutResponseHeadersMapper(), handler, exceptionHandler, false)
         );
         request.exceptionHandler(exceptionHandler);
         request.end(putObjectRequest.getData());
@@ -278,7 +278,7 @@ public class S3Client {
                 bucket,
                 key,
                 Optional.ofNullable(putObjectAclRequest.getAclHeadersRequest()),
-                new HeadersResponseHandler("putObjectAcl", jaxbUnmarshaller, new PutResponseHeadersMapper(), handler, exceptionHandler)
+                new HeadersResponseHandler("putObjectAcl", jaxbUnmarshaller, new PutResponseHeadersMapper(), handler, exceptionHandler, false)
         );
         request.exceptionHandler(exceptionHandler);
 
@@ -474,7 +474,7 @@ public class S3Client {
                 bucket,
                 key,
                 continueMultipartUploadRequest,
-                new HeadersResponseHandler("continueMultipartUpload", jaxbUnmarshaller, new ContinueMultipartUploadResponseHeadersMapper(), handler, exceptionHandler)
+                new HeadersResponseHandler("continueMultipartUpload", jaxbUnmarshaller, new ContinueMultipartUploadResponseHeadersMapper(), handler, exceptionHandler, false)
         );
         request.exceptionHandler(exceptionHandler);
         request.end(continueMultipartUploadRequest.getData());
@@ -542,7 +542,7 @@ public class S3Client {
                 bucket,
                 key,
                 abortMultipartUploadRequest,
-                new HeadersResponseHandler<>("abortMultipartUpload", jaxbUnmarshaller, new CommonResponseHeadersMapper(), handler, exceptionHandler)
+                new HeadersResponseHandler<>("abortMultipartUpload", jaxbUnmarshaller, new CommonResponseHeadersMapper(), handler, exceptionHandler, false)
         );
         request.exceptionHandler(exceptionHandler);
         request.end();
@@ -590,7 +590,7 @@ public class S3Client {
                 bucket,
                 key,
                 deleteObjectRequest,
-                new HeadersResponseHandler("deleteObject", jaxbUnmarshaller, new CommonResponseHeadersMapper(), handler, exceptionHandler)
+                new HeadersResponseHandler("deleteObject", jaxbUnmarshaller, new CommonResponseHeadersMapper(), handler, exceptionHandler, false)
         );
         request.exceptionHandler(exceptionHandler);
         request.end();
@@ -1279,13 +1279,15 @@ public class S3Client {
         private final ResponseHeaderMapper<H> responseHeaderMapper;
         private final Handler<Response<H, Void>> successHandler;
         private final Handler<Throwable> exceptionHandler;
+        private final boolean headOnly;
 
-        private HeadersResponseHandler(String action, Unmarshaller jaxbUnmarshaller, ResponseHeaderMapper<H> responseHeaderMapper, Handler<Response<H, Void>> successHandler, Handler<Throwable> exceptionHandler) {
+        private HeadersResponseHandler(String action, Unmarshaller jaxbUnmarshaller, ResponseHeaderMapper<H> responseHeaderMapper, Handler<Response<H, Void>> successHandler, Handler<Throwable> exceptionHandler, boolean headOnly) {
             this.action = action;
             this.jaxbUnmarshaller = jaxbUnmarshaller;
             this.responseHeaderMapper = responseHeaderMapper;
             this.successHandler = successHandler;
             this.exceptionHandler = exceptionHandler;
+            this.headOnly = headOnly;
         }
 
         @Override
@@ -1298,11 +1300,18 @@ public class S3Client {
                             log.info("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
                         }
 
+                        final ErrorResponse errorResponse;
+                        if (headOnly) {
+                            errorResponse = null;
+                        } else {
+                            errorResponse = (ErrorResponse) jaxbUnmarshaller.unmarshal(convertToSaxSource(buffer.getBytes()));
+                        }
+
                         exceptionHandler.handle(
                                 new HttpErrorException(
                                         event.statusCode(),
                                         event.statusMessage(),
-                                        (ErrorResponse) jaxbUnmarshaller.unmarshal(convertToSaxSource(buffer.getBytes())),
+                                        errorResponse,
                                         "Error occurred on '" + action + "'"
                                 )
                         );

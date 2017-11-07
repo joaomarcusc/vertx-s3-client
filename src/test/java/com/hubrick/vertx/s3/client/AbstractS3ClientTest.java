@@ -238,6 +238,17 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
         );
     }
 
+    void mockHeadObjectErrorResponse(Header... expectedHeaders) throws IOException {
+        mock(
+                Collections.emptyMap(),
+                "HEAD",
+                "/bucket/key",
+                403,
+                "0".getBytes(),
+                expectedHeaders
+        );
+    }
+
     void verifyHeadObject(TestContext testContext) {
         final Async async = testContext.async();
         s3Client.headObject("bucket", "key", new HeadObjectRequest(),
@@ -246,6 +257,23 @@ public abstract class AbstractS3ClientTest extends AbstractFunctionalTest {
                     async.complete();
                 },
                 testContext::fail
+        );
+    }
+
+    void verifyHeadObjectErrorResponse(final TestContext testContext) {
+        final Async async = testContext.async();
+        s3Client.headObject("bucket", "key", new HeadObjectRequest(),
+                (result) -> {
+                    testContext.fail("Exceptions should be thrown");
+                },
+                error -> {
+                    assertThat(testContext, error, instanceOf(HttpErrorException.class));
+
+                    final HttpErrorException httpErrorException = (HttpErrorException) error;
+                    assertThat(testContext, httpErrorException.getStatus(), is(403));
+                    assertThat(testContext, httpErrorException.getErrorResponse(), nullValue());
+                    async.complete();
+                }
         );
     }
 
