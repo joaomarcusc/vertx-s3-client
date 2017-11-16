@@ -129,7 +129,7 @@ A fully functional Vert.x client for S3
 ```
 
 ### Adaptive upload
-The client will automaticaly detect the size of the stream. If it's lower then 5MB it will directly upload the file to S3, otherwise it will stream the data using the mutlipart upload.
+S3 will return a error code in case multipart upload is used and the parts are smaller then 5MB. To not deal with the detection of the stream size adaptive upload can be used. The client will automaticaly detect the size of the stream. If it's lower then 5MB it will directly upload the file to S3, otherwise it will stream the data using the mutlipart upload.
 ```java
         final S3ClientOptions clientOptions = new S3ClientOptions()
                 .setAwsRegion("eu-central-1")
