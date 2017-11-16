@@ -14,7 +14,7 @@ A fully functional Vert.x client for S3
 <dependency>
     <groupId>com.hubrick.vertx</groupId>
     <artifactId>vertx-s3-client</artifactId>
-    <version>3.2.0</version>
+    <version>3.3.1</version>
 </dependency>
 ```
 
