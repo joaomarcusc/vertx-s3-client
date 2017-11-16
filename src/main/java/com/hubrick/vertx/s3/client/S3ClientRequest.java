@@ -40,6 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 class S3ClientRequest implements HttpClientRequest {
 
     private static final Logger log = LoggerFactory.getLogger(S3ClientRequest.class);
+    private static final Integer MAX_LOG_OUTPUT = 10000;
 
     private final HttpClientRequest request;
 
@@ -413,7 +414,11 @@ class S3ClientRequest implements HttpClientRequest {
 
     private void logBody(Buffer body) {
         if (log.isDebugEnabled()) {
-            log.debug("Request Body: {}", new String(body.getBytes(), Charsets.UTF_8));
+            if(body.length() > MAX_LOG_OUTPUT) {
+                log.debug("Request Body: {}", new String(body.getBytes(0, MAX_LOG_OUTPUT), Charsets.UTF_8) + "\nRest truncated......");
+            } else {
+                log.debug("Request Body: {}", new String(body.getBytes(), Charsets.UTF_8));
+            }
         }
     }
 

@@ -101,6 +101,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class S3Client {
 
     private static final Logger log = LoggerFactory.getLogger(S3Client.class);
+    private static final Integer MAX_LOG_OUTPUT = 10000;
     private static final int FIVE_MB_IN_BYTES = 5242880;
     private static final String DEFAULT_REGION = "us-east-1";
     private static final String DEFAULT_ENDPOINT = "s3.amazonaws.com";
@@ -1193,9 +1194,7 @@ public class S3Client {
                 response.bodyHandler(buffer -> {
                     try {
                         log.warn("Error occurred. Status: {}, Message: {}", response.statusCode(), response.statusMessage());
-                        if (log.isDebugEnabled()) {
-                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
-                        }
+                        logInfoResponse(buffer);
 
                         exceptionHandler.handle(
                                 new HttpErrorException(
@@ -1238,9 +1237,7 @@ public class S3Client {
                 try {
                     if (event.statusCode() / 100 != 2) {
                         log.warn("Error occurred. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
-                        if (log.isInfoEnabled()) {
-                            log.info("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
-                        }
+                        logInfoResponse(buffer);
 
                         exceptionHandler.handle(
                                 new HttpErrorException(
@@ -1252,9 +1249,7 @@ public class S3Client {
                         );
                     } else {
                         log.info("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
-                        if (log.isDebugEnabled()) {
-                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
-                        }
+                        logDebugResponse(buffer);
                         successHandler.handle(new ResponseWithBody<>(responseHeaderMapper.map(event.headers()), (B) jaxbUnmarshaller.unmarshal(convertToSaxSource(buffer.getBytes()))));
                     }
                 } catch (UnmarshalException e) {
@@ -1296,9 +1291,7 @@ public class S3Client {
                 try {
                     if (event.statusCode() / 100 != 2) {
                         log.warn("Error occurred. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
-                        if (log.isInfoEnabled()) {
-                            log.info("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
-                        }
+                        logInfoResponse(buffer);
 
                         final ErrorResponse errorResponse;
                         if (headOnly) {
@@ -1318,7 +1311,7 @@ public class S3Client {
                     } else {
                         log.info("Request successful. Status: {}, Message: {}", event.statusCode(), event.statusMessage());
                         if (log.isDebugEnabled()) {
-                            log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+                            log.debug("Response headers: {}", event.headers());
                         }
                         successHandler.handle(new HeaderOnlyResponse<>(responseHeaderMapper.map(event.headers())));
                     }
@@ -1552,5 +1545,25 @@ public class S3Client {
 
         //Create a SAXSource specifying the filter
         return new SAXSource(inFilter, inputSource);
+    }
+
+    private static void logDebugResponse(Buffer buffer) {
+        if(log.isDebugEnabled()) {
+            if(buffer.length() > MAX_LOG_OUTPUT) {
+                log.debug("Response: {}", new String(buffer.getBytes(0, MAX_LOG_OUTPUT), Charsets.UTF_8) + "\nRest truncated......");
+            } else {
+                log.debug("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+            }
+        }
+    }
+
+    private static void logInfoResponse(Buffer buffer) {
+        if(log.isInfoEnabled()) {
+            if(buffer.length() > MAX_LOG_OUTPUT) {
+                log.info("Response: {}", new String(buffer.getBytes(0, MAX_LOG_OUTPUT), Charsets.UTF_8) + "\nRest truncated......");
+            } else {
+                log.info("Response: {}", new String(buffer.getBytes(), Charsets.UTF_8));
+            }
+        }
     }
 }
