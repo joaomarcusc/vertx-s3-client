@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class MultipartUploadWriteStream implements WriteStream<Buffer> {
 
     private static final Integer FIVE_MB_IN_BYTES = 5242880;
-    private static final Integer DEFAULT_MAX_OUTSTANDING_BUFFER_WRITES = 10;
+    private static final Integer DEFAULT_MAX_OUTSTANDING_BUFFER_WRITES = 20;
 
     private final S3Client s3Client;
     private final InitMultipartUploadResponse initMultipartUploadResponse;
