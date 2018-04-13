@@ -38,15 +38,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class MultipartUploadWriteStream implements WriteStream<Buffer> {
 
     private static final Integer FIVE_MB_IN_BYTES = 5242880;
+    private static final Integer DEFAULT_MAX_OUTSTANDING_BUFFER_WRITES = 10;
 
     private final S3Client s3Client;
     private final InitMultipartUploadResponse initMultipartUploadResponse;
 
     private Handler<Void> endHandler;
     private Handler<Throwable> exceptionHandler;
+    private Handler<Void> drainHandler;
 
     private final Map<Integer, String> partETagMap = new TreeMap<>();
     private Integer nextPartNumber = 1;
+    private Integer outstandingBufferWrites = 0;
+    private Integer maxOutstandingBufferWrites = DEFAULT_MAX_OUTSTANDING_BUFFER_WRITES;
     private boolean endCalled = false;
     private boolean abortOnFailure = true;
     private boolean aborted = false;
@@ -97,10 +101,11 @@ public class MultipartUploadWriteStream implements WriteStream<Buffer> {
     @Override
     public WriteStream<Buffer> write(Buffer data) {
         buffer.appendBuffer(data);
-        if(buffer.length() >= bufferSize || endCalled) {
+        if (buffer.length() >= bufferSize || endCalled) {
             final Integer currentPartNumber = nextPartNumber++;
             final Buffer currentBuffer = buffer;
             this.buffer = Buffer.buffer(bufferSize);
+            outstandingBufferWrites++;
             s3Client.continueMultipartUpload(
                     initMultipartUploadResponse.getBucket(),
                     initMultipartUploadResponse.getKey(),
@@ -108,11 +113,12 @@ public class MultipartUploadWriteStream implements WriteStream<Buffer> {
                     response -> {
                         // Save nextPartNumber together with ETag required for the complete operation
                         partETagMap.put(currentPartNumber, response.getHeader().getETag());
+                        decreaseOutstandingBufferWrites();
                         endIfAllPartsAreUploaded();
                     },
                     throwable -> {
-                        if(abortOnFailure) {
-                            if(!aborted) {
+                        if (abortOnFailure) {
+                            if (!aborted) {
                                 abort(aVoid -> exceptionHandler.handle(throwable));
                             }
                         } else {
@@ -127,7 +133,7 @@ public class MultipartUploadWriteStream implements WriteStream<Buffer> {
     @Override
     public void end() {
         endCalled = true;
-        if(buffer.length() > 0) {
+        if (buffer.length() > 0) {
             write(Buffer.buffer());
         }
         endIfAllPartsAreUploaded();
@@ -170,18 +176,35 @@ public class MultipartUploadWriteStream implements WriteStream<Buffer> {
         aborted = true;
     }
 
+    private void decreaseOutstandingBufferWrites() {
+        outstandingBufferWrites--;
+        if (outstandingBufferWrites <= maxOutstandingBufferWrites / 2 && drainHandler != null) {
+            try {
+                drainHandler.handle(null);
+            } catch (Throwable t) {
+                if (exceptionHandler != null) {
+                    exceptionHandler.handle(t);
+                }
+            }
+        }
+    }
+
     @Override
     public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+        checkArgument(maxSize >= 2, "maxSize must be bigger then 2");
+
+        maxOutstandingBufferWrites = maxSize;
         return this;
     }
 
     @Override
     public boolean writeQueueFull() {
-        return false;
+        return outstandingBufferWrites > maxOutstandingBufferWrites;
     }
 
     @Override
     public WriteStream<Buffer> drainHandler(Handler<Void> handler) {
+        this.drainHandler = handler;
         return this;
     }
 
