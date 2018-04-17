@@ -45,6 +45,9 @@ public class AdaptiveUploadRequest extends AclHeadersRequest<AdaptiveUploadReque
     private String amzTagging;
     private String amzWebsiteRedirectLocation;
 
+    private Integer writeQueueMaxSize;
+    private Integer bufferSize;
+
     public AdaptiveUploadRequest(ReadStream<Buffer> readStream) {
         checkNotNull(readStream, "readStream must not be null");
 
@@ -107,6 +110,16 @@ public class AdaptiveUploadRequest extends AclHeadersRequest<AdaptiveUploadReque
         return this;
     }
 
+    public AdaptiveUploadRequest withWriteQueueMaxSize(Integer writeQueueMaxSize) {
+        this.writeQueueMaxSize = writeQueueMaxSize;
+        return this;
+    }
+
+    public AdaptiveUploadRequest withBufferSize(Integer bufferSize) {
+        this.bufferSize = bufferSize;
+        return this;
+    }
+
     public ReadStream<Buffer> getReadStream() {
         return readStream;
     }
@@ -149,6 +162,14 @@ public class AdaptiveUploadRequest extends AclHeadersRequest<AdaptiveUploadReque
 
     public String getAmzWebsiteRedirectLocation() {
         return amzWebsiteRedirectLocation;
+    }
+
+    public Integer getWriteQueueMaxSize() {
+        return writeQueueMaxSize;
+    }
+
+    public Integer getBufferSize() {
+        return bufferSize;
     }
 
     @Override

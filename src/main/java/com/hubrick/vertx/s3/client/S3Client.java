@@ -335,10 +335,20 @@ public class S3Client {
                     chunkedBufferReadStream.pause();
                     initMultipartUpload(bucket, key, mapAdaptiveUploadRequestToInitMultipartUploadRequest(adaptiveUploadRequest),
                             event -> {
-                                event.getData().exceptionHandler(throwable -> exceptionHandler.handle(throwable));
-                                Pump.pump(chunkedBufferReadStream, event.getData()).start();
-                                chunkedBufferReadStream.endHandler(aVoid -> event.getData().end(endResponse -> handler.handle(new HeaderOnlyResponse(event.getHeader()))));
-                                chunkedBufferReadStream.resume();
+                                try {
+                                    if(adaptiveUploadRequest.getWriteQueueMaxSize() != null) {
+                                        event.getData().setWriteQueueMaxSize(adaptiveUploadRequest.getWriteQueueMaxSize());
+                                    }
+                                    if(adaptiveUploadRequest.getBufferSize() != null) {
+                                        event.getData().bufferSize(adaptiveUploadRequest.getBufferSize());
+                                    }
+                                    event.getData().exceptionHandler(throwable -> exceptionHandler.handle(throwable));
+                                    Pump.pump(chunkedBufferReadStream, event.getData()).start();
+                                    chunkedBufferReadStream.endHandler(aVoid -> event.getData().end(endResponse -> handler.handle(new HeaderOnlyResponse(event.getHeader()))));
+                                    chunkedBufferReadStream.resume();
+                                } catch (Throwable t) {
+                                    exceptionHandler.handle(t);
+                                }
                             },
                             exceptionHandler
                     );
