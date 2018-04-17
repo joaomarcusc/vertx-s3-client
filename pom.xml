@@ -11,7 +11,7 @@
     <groupId>com.hubrick.vertx</groupId>
     <artifactId>vertx-s3-client</artifactId>
     <packaging>jar</packaging>
-    <version>3.3.3</version>
+    <version>3.3.4-SNAPSHOT</version>
     <inceptionYear>2016</inceptionYear>
 
     <name>Vert.x S3 client</name>
