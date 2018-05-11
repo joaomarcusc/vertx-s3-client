@@ -80,7 +80,9 @@ public class ChunkedBufferReadStream implements ReadStream<Buffer> {
     private void handleChunk() {
         try {
             boolean pushed = false;
-            if (buffer.length() >= minChunkSize || (endCalled && buffer.length() > 0)) {
+
+            // Check chunks to make sure that the handler is called at least once.
+            if (buffer.length() >= minChunkSize || (endCalled && (buffer.length() > 0 || chunks == 0))) {
                 pushed = true;
                 if (chunkHandler != null) {
                     chunkHandler.handle(buffer.slice());
