@@ -190,6 +190,12 @@ public class ChunkedBufferReadStream implements ReadStream<Buffer> {
     }
 
     @Override
+    public ReadStream<Buffer> fetch(long amount) {
+        this.readStream.fetch(amount);
+        return this;
+    }
+
+    @Override
     public ChunkedBufferReadStream endHandler(Handler<Void> endHandler) {
         this.endHandler = endHandler;
         return this;

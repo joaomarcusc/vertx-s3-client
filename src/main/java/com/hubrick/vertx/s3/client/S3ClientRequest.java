@@ -26,6 +26,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,6 +130,12 @@ class S3ClientRequest implements HttpClientRequest {
     @Override
     public S3ClientRequest resume() {
         request.resume();
+        return this;
+    }
+
+    @Override
+    public HttpClientRequest fetch(long amount) {
+        request.fetch(amount);
         return this;
     }
 
@@ -358,6 +365,17 @@ class S3ClientRequest implements HttpClientRequest {
     public S3ClientRequest writeCustomFrame(HttpFrame frame) {
         request.writeCustomFrame(frame);
         return this;
+    }
+
+    @Override
+    public HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
+        request.setStreamPriority(streamPriority);
+        return this;
+    }
+
+    @Override
+    public StreamPriority getStreamPriority() {
+        return request.getStreamPriority();
     }
 
     protected void initAuthenticationHeaderBeforePayload() {
